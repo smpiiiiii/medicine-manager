@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>薬剤在庫マネージャー</title>
+    <meta name="description" content="薬剤の消費期限を管理し、期限前に通知するアプリ">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <meta name="theme-color" content="#0ea5e9">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans JP', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+        /* ヘッダー */
+        .header { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #fff; padding: 16px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(14,165,233,.3); }
+        .header h1 { font-size: 16px; font-weight: 900; }
+        .header .sub { font-size: 11px; opacity: .8; margin-top: 2px; }
+        .stats { display: flex; justify-content: center; gap: 8px; margin-top: 8px; font-size: 11px; flex-wrap: wrap; }
+        .stats .s { background: rgba(255,255,255,.15); padding: 4px 10px; border-radius: 12px; backdrop-filter: blur(4px); }
+        .stats b { color: #fbbf24; }
+        .stat-danger b { color: #f87171; }
+        .stat-warn b { color: #fbbf24; }
+        .stat-safe b { color: #34d399; }
+
+        /* コンテンツ */
+        .content { padding: 12px; max-width: 480px; margin: 0 auto; padding-bottom: 80px; }
+
+        /* カード */
+        .card { background: #1e293b; border-radius: 14px; padding: 14px; margin-bottom: 10px; border: 1px solid #334155; }
+        .card h3 { font-size: 13px; color: #94a3b8; margin-bottom: 10px; font-weight: 700; }
+
+        /* フォーム */
+        label { font-size: 11px; font-weight: 700; color: #64748b; display: block; margin-bottom: 3px; margin-top: 8px; }
+        label:first-child { margin-top: 0; }
+        input, select, textarea { width: 100%; border: 1.5px solid #334155; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-family: inherit; outline: none; background: #0f172a; color: #e2e8f0; }
+        input:focus, select:focus, textarea:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,.15); }
+        input[type="date"] { color-scheme: dark; }
+        textarea { resize: none; height: 60px; }
+        .form-row { display: flex; gap: 8px; }
+        .form-row > div { flex: 1; }
+
+        /* ボタン */
+        .btn { display: block; width: 100%; border: none; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; color: #fff; margin-top: 10px; text-align: center; transition: all .2s; }
+        .btn:active { transform: scale(.98); opacity: .85; }
+        .btn-primary { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
+        .btn-outline { background: transparent; border: 2px solid #334155; color: #94a3b8; }
+        .btn-outline:hover { border-color: #0ea5e9; color: #0ea5e9; }
+        .btn-sm { font-size: 11px; padding: 6px 12px; margin-top: 0; width: auto; display: inline-block; border-radius: 8px; }
+        .btn-icon { width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 14px; margin-top: 0; flex-shrink: 0; }
+
+        /* 薬剤カード */
+        .med-card { background: #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 8px; border-left: 4px solid #334155; transition: all .2s; }
+        .med-card.status-danger { border-left-color: #ef4444; background: linear-gradient(135deg, #1e293b, #2a1f1f); }
+        .med-card.status-warn { border-left-color: #f59e0b; background: linear-gradient(135deg, #1e293b, #2a271f); }
+        .med-card.status-safe { border-left-color: #10b981; }
+        .med-card.status-out { border-left-color: #6b7280; background: #151c2a; opacity: .7; }
+        .med-header { display: flex; align-items: center; gap: 8px; }
+        .med-icon { font-size: 20px; flex-shrink: 0; }
+        .med-info { flex: 1; min-width: 0; }
+        .med-name { font-size: 14px; font-weight: 700; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .med-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .med-actions { display: flex; gap: 4px; align-items: center; }
+        .med-badge { font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: 700; white-space: nowrap; }
+        .badge-danger { background: rgba(239,68,68,.15); color: #f87171; }
+        .badge-warn { background: rgba(245,158,11,.15); color: #fbbf24; }
+        .badge-safe { background: rgba(16,185,129,.15); color: #34d399; }
+        .badge-out { background: rgba(107,114,128,.15); color: #9ca3af; }
+        .med-qty { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+        .med-qty .qty-btn { width: 28px; height: 28px; border: 1.5px solid #334155; background: #0f172a; color: #e2e8f0; border-radius: 8px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .med-qty .qty-btn:active { background: #1e293b; }
+        .med-qty .qty-val { font-size: 15px; font-weight: 900; color: #f1f5f9; min-width: 40px; text-align: center; }
+        .med-detail { font-size: 11px; color: #64748b; margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .med-detail span::before { content: ''; display: inline-block; width: 4px; height: 4px; background: #475569; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+
+        /* フィルタータブ */
+        .filter-tabs { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .filter-tab { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; background: #1e293b; border: 1px solid #334155; color: #94a3b8; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+        .filter-tab.active { background: #0ea5e9; border-color: #0ea5e9; color: #fff; }
+
+        /* 検索 */
+        .search-box { position: relative; margin-bottom: 10px; }
+        .search-box input { padding-left: 36px; }
+        .search-box::before { content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; }
+
+        /* 空状態 */
+        .empty { text-align: center; padding: 40px 20px; color: #475569; }
+        .empty .emoji { font-size: 48px; margin-bottom: 12px; }
+        .empty .text { font-size: 13px; line-height: 1.6; }
+
+        /* モーダル */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.6); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-overlay.show { display: flex; }
+        .modal { background: #1e293b; border-radius: 20px 20px 0 0; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; padding: 20px 16px 32px; animation: slideUp .3s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-handle { width: 40px; height: 4px; background: #475569; border-radius: 2px; margin: 0 auto 16px; }
+        .modal h2 { font-size: 16px; font-weight: 900; margin-bottom: 12px; }
+
+        /* 通知バナー */
+        .notify-banner { background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .notify-banner .emoji { font-size: 24px; flex-shrink: 0; }
+        .notify-banner .text { flex: 1; font-size: 12px; color: #fff; font-weight: 700; line-height: 1.4; }
+
+        /* トースト */
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #10b981; color: #fff; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 700; z-index: 300; box-shadow: 0 4px 12px rgba(0,0,0,.3); transition: all .3s; opacity: 0; pointer-events: none; }
+        .toast.show { opacity: 1; }
+
+        .hidden { display: none; }
+
+        /* 予測検索 */
+        .autocomplete-wrap { position: relative; }
+        .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #1e293b; border: 1.5px solid #0ea5e9; border-top: none; border-radius: 0 0 10px 10px; max-height: 180px; overflow-y: auto; z-index: 210; display: none; }
+        .autocomplete-list.show { display: block; }
+        .autocomplete-item { padding: 10px 12px; font-size: 13px; color: #e2e8f0; cursor: pointer; border-bottom: 1px solid #334155; }
+        .autocomplete-item:last-child { border-bottom: none; }
+        .autocomplete-item:hover, .autocomplete-item.active { background: #0ea5e9; color: #fff; }
+        .autocomplete-item .match { color: #fbbf24; font-weight: 700; }
+
+        /* ボトムナビ */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; border-top: 1px solid #334155; display: flex; justify-content: center; max-width: 480px; margin: 0 auto; z-index: 100; }
+        .nav-item { flex: 1; text-align: center; padding: 10px 0 8px; font-size: 10px; color: #64748b; cursor: pointer; }
+        .nav-item.active { color: #0ea5e9; }
+        .nav-item .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+
+        /* バーコードスキャナー */
+        .scanner-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; z-index: 250; flex-direction: column; }
+        .scanner-overlay.show { display: flex; }
+        .scanner-header { background: rgba(0,0,0,.8); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 2; }
+        .scanner-header h3 { color: #fff; font-size: 14px; font-weight: 700; }
+        .scanner-close { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; padding: 4px 8px; }
+        .scanner-viewport { flex: 1; position: relative; overflow: hidden; }
+        .scanner-viewport video { width: 100%; height: 100%; object-fit: cover; }
+        .scanner-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 70%; max-width: 280px; aspect-ratio: 3/1; border: 3px solid #0ea5e9; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0,0,0,.5); z-index: 1; }
+        .scanner-guide::after { content: 'バーコードを枠内に合わせてください'; position: absolute; bottom: -36px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; text-shadow: 0 1px 4px rgba(0,0,0,.8); }
+        .scanner-result { background: rgba(0,0,0,.8); padding: 12px 16px; text-align: center; z-index: 2; }
+        .scanner-result .code { font-size: 18px; font-weight: 900; color: #0ea5e9; font-family: monospace; }
+        .scanner-result .hint { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+        /* 自動リロードインジケーター */
+        .auto-reload-badge { position: fixed; top: 8px; right: 8px; background: rgba(16,185,129,.9); color: #fff; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 12px; z-index: 150; opacity: 0; transition: opacity .3s; pointer-events: none; }
+        .auto-reload-badge.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1 id="headerTitle">💊 薬剤在庫マネージャー</h1>
+    <div class="sub" id="headerSub"></div>
+    <div class="stats hidden" id="statsBar">
+        <div class="s stat-danger">🔴 期限切れ <b id="expiredCount">0</b></div>
+        <div class="s stat-warn">🟡 1ヶ月以内 <b id="warningCount">0</b></div>
+        <div class="s stat-safe">🟢 安全 <b id="safeCount">0</b></div>
+    </div>
+</div>
+
+<div class="content">
+    <!-- ===== トップ画面（ルーム未参加時） ===== -->
+    <div id="topView">
+        <div class="card">
+            <h3>📋 新しい管理ルームを作成</h3>
+            <label>職場名・ルーム名</label>
+            <input type="text" id="roomName" placeholder="例: ○○薬局 / △△クリニック">
+            <button class="btn btn-primary" id="createRoomBtn">✅ 作成する</button>
+        </div>
+
+        <div class="card">
+            <h3>🔗 既存のルームに参加</h3>
+            <div style="font-size:12px;color:#64748b;line-height:1.6;">
+                管理者から共有されたURLにアクセスしてください。
+            </div>
+        </div>
+
+        <div id="historySection" class="card hidden">
+            <h3>📊 最近のルーム</h3>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <!-- ===== ルーム画面 ===== -->
+    <div id="roomView" class="hidden">
+        <!-- 通知バナー -->
+        <div id="notifyBanner" class="notify-banner hidden" onclick="requestNotification()">
+            <div class="emoji">🔔</div>
+            <div class="text">タップして通知を有効にする<br>消費期限1ヶ月前にお知らせします</div>
+        </div>
+
+        <!-- 期限アラート -->
+        <div id="expiryAlerts"></div>
+
+        <!-- 検索 -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="薬剤名で検索...">
+        </div>
+
+        <!-- フィルター -->
+        <div class="filter-tabs" id="filterTabs">
+            <div class="filter-tab active" data-filter="all">すべて</div>
+            <div class="filter-tab" data-filter="danger">🔴 期限切れ</div>
+            <div class="filter-tab" data-filter="warn">🟡 1ヶ月以内</div>
+            <div class="filter-tab" data-filter="safe">🟢 安全</div>
+            <div class="filter-tab" data-filter="out">⬛ 在庫切れ</div>
+        </div>
+
+        <!-- 薬剤リスト -->
+        <div id="medList"></div>
+
+        <!-- 空メッセージ -->
+        <div id="emptyMsg" class="empty hidden">
+            <div class="emoji">💊</div>
+            <div class="text">まだ薬剤が登録されていません<br>下の「＋」ボタンから追加しましょう</div>
+        </div>
+
+        <!-- 共有ボタン -->
+        <div style="text-align:center;margin-top:16px;">
+            <button class="btn btn-outline" id="shareRoomBtn" style="display:inline-block;width:auto;padding:8px 20px;">📤 URLを共有</button>
+        </div>
+    </div>
+</div>
+
+<!-- FAB（追加ボタン） -->
+<div id="fabBtn" class="hidden" style="position:fixed;bottom:70px;right:16px;z-index:99;display:flex;flex-direction:column;gap:10px;align-items:flex-end;">
+    <button class="btn" style="width:56px;height:56px;border-radius:50%;font-size:20px;padding:0;box-shadow:0 4px 16px rgba(245,158,11,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f59e0b,#d97706);" onclick="openScanInput()">🏷️</button>
+    <button class="btn btn-primary" style="width:56px;height:56px;border-radius:50%;font-size:24px;padding:0;box-shadow:0 4px 16px rgba(14,165,233,.4);display:flex;align-items:center;justify-content:center;" onclick="openAddModal()">＋</button>
+</div>
+
+<!-- 自動リロードバッジ -->
+<div class="auto-reload-badge" id="reloadBadge">🔄 更新あり</div>
+
+<!-- 追加モーダル -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <h2>💊 薬剤を登録</h2>
+        <div id="gs1InputSection" style="background:linear-gradient(135deg,rgba(14,165,233,.15),rgba(59,130,246,.1));border:2px solid rgba(14,165,233,.5);border-radius:14px;padding:14px;margin-bottom:14px;">
+            <div style="font-size:14px;color:#38bdf8;font-weight:900;margin-bottom:6px;">🏷️ GS1コードで簡単登録</div>
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:8px;">バーコード下に印字された数字を入力 → 解析で期限・ロット自動入力！</div>
+            <input type="text" id="gs1CodeInput" placeholder="例: (01)14987246758014(17)260400(10)AF4W" style="width:100%;font-size:15px;font-family:monospace;padding:12px;border-radius:10px;margin-bottom:8px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;">
+            <button type="button" class="btn btn-primary" id="gs1ParseBtn" style="width:100%;padding:12px;font-size:15px;font-weight:900;border-radius:10px;">🔍 解析する</button>
+            <div id="gs1ParseResult" style="font-size:12px;color:#94a3b8;margin-top:6px;"></div>
+        </div>
+        <label>薬剤名 *</label>
+        <div class="autocomplete-wrap">
+            <input type="text" id="medName" placeholder="例: ロキソニン錠60mg" autocomplete="off">
+            <div class="autocomplete-list" id="addAutoList"></div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label>数量 *</label>
+                <input type="number" id="medQty" placeholder="10" inputmode="numeric" value="1">
+            </div>
+            <div>
+                <label>単位</label>
+                <select id="medUnit">
+                    <option value="個">個</option>
+                    <option value="箱">箱</option>
+                    <option value="本">本</option>
+                    <option value="袋">袋</option>
+                    <option value="シート">シート</option>
+                    <option value="錠">錠</option>
+                    <option value="mL">mL</option>
+                    <option value="g">g</option>
+                </select>
+            </div>
+        </div>
+        <label>消費期限 *</label>
+        <input type="date" id="medExpiry">
+        <label>保管場所</label>
+        <input type="text" id="medLocation" placeholder="例: 冷蔵庫 / 棚A-3">
+        <label>カテゴリ</label>
+        <select id="medCategory">
+            <option value="">選択してください</option>
+            <option value="内服薬">内服薬</option>
+            <option value="外用薬">外用薬</option>
+            <option value="注射薬">注射薬</option>
+            <option value="消毒薬">消毒薬</option>
+            <option value="医療材料">医療材料</option>
+            <option value="その他">その他</option>
+        </select>
+        <label>メモ</label>
+        <textarea id="medMemo" placeholder="任意のメモ"></textarea>
+        <button class="btn btn-primary" id="addMedBtn">✅ 登録する</button>
+        <button class="btn btn-outline" onclick="closeAddModal()">キャンセル</button>
+    </div>
+</div>
+
+<!-- 編集モーダル -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <h2>✏️ 薬剤を編集</h2>
+        <input type="hidden" id="editMid">
+        <label>薬剤名 *</label>
+        <div class="autocomplete-wrap">
+            <input type="text" id="editName" autocomplete="off">
+            <div class="autocomplete-list" id="editAutoList"></div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label>数量</label>
+                <input type="number" id="editQty" inputmode="numeric">
+            </div>
+            <div>
+                <label>単位</label>
+                <select id="editUnit">
+                    <option value="個">個</option>
+                    <option value="箱">箱</option>
+                    <option value="本">本</option>
+                    <option value="袋">袋</option>
+                    <option value="シート">シート</option>
+                    <option value="錠">錠</option>
+                    <option value="mL">mL</option>
+                    <option value="g">g</option>
+                </select>
+            </div>
+        </div>
+        <label>消費期限 *</label>
+        <input type="date" id="editExpiry">
+        <label>保管場所</label>
+        <input type="text" id="editLocation">
+        <label>カテゴリ</label>
+        <select id="editCategory">
+            <option value="">選択してください</option>
+            <option value="内服薬">内服薬</option>
+            <option value="外用薬">外用薬</option>
+            <option value="注射薬">注射薬</option>
+            <option value="消毒薬">消毒薬</option>
+            <option value="医療材料">医療材料</option>
+            <option value="その他">その他</option>
+        </select>
+        <label>メモ</label>
+        <textarea id="editMemo"></textarea>
+        <button class="btn btn-primary" id="saveEditBtn">✅ 保存する</button>
+        <button class="btn btn-danger" id="deleteMedBtn">🗑 削除する</button>
+        <button class="btn btn-outline" onclick="closeEditModal()">キャンセル</button>
+    </div>
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+    // === よく使う薬剤名リスト ===
+    var commonMedicines = [
+        'ロキソニン錠60mg','カロナール錠200','カロナール錠500','アセトアミノフェン','イブプロフェン',
+        'ムコスタ錠100mg','ガスター錠20mg','タケプロン','ネキシウム','ランソプラゾール',
+        'アムロジピン錠5mg','メトホルミン','グリメピリド','リピトール','クレストール',
+        'フロセミド錠20mg','ワルファリン','バイアスピリン','クロピドグレル',
+        'レバミピド錠100mg','テプレノン','ファモチジン','ラベプラゾール',
+        'メチコバール錠500','ビタメジン','シナール','ビタミンC','ビタミンB12',
+        'プレドニゾロン錠5mg','デキサメタゾン','ベタメタゾン',
+        'セフカペンピボキシル','アモキシシリン','クラリスロマイシン','レボフロキサシン','アジスロマイシン',
+        'デパス錠0.5mg','リーゼ錠5mg','ハルシオン','マイスリー','レンドルミン',
+        'リンデロンVG軟膏','ヒルドイドソフト軟膏','ゲンタシン軟膏','アズノール軟膏',
+        'パタノール点眼液','ムコスタ点眼液',
+        'ツムラ葛根湯','ツムラ芍薬甘草湯','ツムラ補中益気湯','ツムラ大建中湯',
+        'インスリン','ヘパリンナトリウム','生理食塩水','ブドウ糖注射液',
+        'イソジン','ヒビテン','消毒用エタノール','オキシドール',
+        'サージカルテープ','ガーゼ','絆創膏','注射針','シリンジ','手袋',
+        'アレグラ錠60mg','アレジオン','ザイザル','モンテルカスト',
+        'メトクロプラミド','ドンペリドン','ナウゼリン',
+        'トラネキサム酸','アドレナリン','アトロピン',
+        'ジクロフェナクNaテープ','モーラステープ','ロキソニンテープ',
+        'SPトローチ','フィニッシュコーワ',
+    ];
+    // ひらがな⇔カタカナ変換
+    function hiraganaToKatakana(str) {
+        return str.replace(/[\u3041-\u3096]/g, function(c) { return String.fromCharCode(c.charCodeAt(0) + 0x60); });
+    }
+    function katakanaToHiragana(str) {
+        return str.replace(/[\u30A1-\u30F6]/g, function(c) { return String.fromCharCode(c.charCodeAt(0) - 0x60); });
+    }
+    var API = location.origin;
+    var roomId = null;
+    var roomData = null;
+    var myName = '';
+    var currentFilter = 'all';
+    var searchQuery = '';
+
+    // === DOM ===
+    var topView = document.getElementById('topView');
+    var roomView = document.getElementById('roomView');
+    var fabBtn = document.getElementById('fabBtn');
+
+    // === ユーティリティ ===
+    function showToast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(function() { t.classList.remove('show'); }, 2500);
+    }
+
+    function apiCall(method, path, data, cb) {
+        var xhr = new XMLHttpRequest();
+        xhr.open(method, API + path, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = function() {
+            try { cb(xhr.status, JSON.parse(xhr.responseText)); }
+            catch(e) { cb(xhr.status, null); }
+        };
+        xhr.onerror = function() { cb(0, null); };
+        xhr.send(data ? JSON.stringify(data) : null);
+    }
+
+    // === 消費期限ステータス ===
+    function getExpiryStatus(dateStr) {
+        if (!dateStr) return { status: 'unknown', label: '不明', days: null };
+        var today = new Date();
+        today.setHours(0,0,0,0);
+        var exp = new Date(dateStr);
+        exp.setHours(0,0,0,0);
+        var diff = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+        if (diff < 0) return { status: 'danger', label: Math.abs(diff) + '日超過', days: diff };
+        if (diff === 0) return { status: 'danger', label: '今日まで', days: 0 };
+        if (diff <= 30) return { status: 'warn', label: 'あと' + diff + '日', days: diff };
+        return { status: 'safe', label: diff + '日後', days: diff };
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '-';
+        var d = new Date(dateStr);
+        return (d.getMonth()+1) + '/' + d.getDate();
+    }
+
+    // === 履歴管理 ===
+    function getHistory() {
+        try { return JSON.parse(localStorage.getItem('med_history') || '[]'); } catch(e) { return []; }
+    }
+    function addToHistory(id, name) {
+        var history = getHistory().filter(function(h) { return h.id !== id; });
+        history.unshift({ id: id, name: name, date: new Date().toISOString() });
+        if (history.length > 10) history = history.slice(0, 10);
+        try { localStorage.setItem('med_history', JSON.stringify(history)); } catch(e) {}
+    }
+    function renderHistory() {
+        var history = getHistory();
+        var section = document.getElementById('historySection');
+        var list = document.getElementById('historyList');
+        if (history.length === 0) { section.classList.add('hidden'); return; }
+        section.classList.remove('hidden');
+        list.innerHTML = '';
+        for (var i = 0; i < history.length; i++) {
+            var h = history[i];
+            var a = document.createElement('a');
+            a.href = '/room/' + h.id;
+            a.style.cssText = 'display:block;padding:10px;background:#0f172a;border-radius:10px;margin-bottom:6px;text-decoration:none;color:#e2e8f0;font-size:13px;font-weight:700;';
+            a.textContent = '💊 ' + h.name;
+            list.appendChild(a);
+        }
+    }
+
+    // === 初期化 ===
+    function init() {
+        var parts = location.pathname.split('/');
+        if (parts.length >= 3 && parts[1] === 'room' && parts[2]) {
+            roomId = parts[2];
+            try { myName = localStorage.getItem('med_name_' + roomId) || ''; } catch(e) {}
+            if (!myName) {
+                myName = prompt('あなたの名前を入力してください');
+                if (myName) {
+                    try { localStorage.setItem('med_name_' + roomId, myName); } catch(e) {}
+                }
+            }
+            loadRoom();
+        } else {
+            renderHistory();
+        }
+        // Service Worker登録
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(function() {});
+        }
+    }
+
+    // === ルーム作成 ===
+    document.getElementById('createRoomBtn').addEventListener('click', function() {
+        var name = document.getElementById('roomName').value.trim() || '薬剤管理';
+        apiCall('POST', '/api/create', { name: name }, function(status, data) {
+            if (status === 200 && data) {
+                addToHistory(data.id, name);
+                try { localStorage.setItem('med_admin_' + data.id, data.adminToken); } catch(e) {}
+                location.href = '/room/' + data.id;
+            } else {
+                alert('作成に失敗しました');
+            }
+        });
+    });
+
+    // === ルーム読み込み ===
+    function loadRoom() {
+        topView.classList.add('hidden');
+        roomView.classList.remove('hidden');
+        fabBtn.classList.remove('hidden');
+
+        apiCall('GET', '/api/room/' + roomId, null, function(status, data) {
+            if (status !== 200 || !data) {
+                alert('ルームが見つかりません');
+                location.href = '/';
+                return;
+            }
+            roomData = data;
+            addToHistory(data.id, data.name);
+            document.getElementById('headerTitle').textContent = '💊 ' + data.name;
+            renderMedicines();
+            checkNotificationPermission();
+            startAutoReload();
+        });
+    }
+
+    // === 自動リロード（30秒間隔） ===
+    var autoReloadTimer = null;
+    var lastMedHash = '';
+    function getMedHash() {
+        if (!roomData || !roomData.medicines) return '';
+        return JSON.stringify(roomData.medicines.map(function(m) {
+            return m.mid + ':' + m.quantity + ':' + m.expiryDate + ':' + m.name + ':' + (m.updatedAt || '');
+        }));
+    }
+    function startAutoReload() {
+        if (autoReloadTimer) clearInterval(autoReloadTimer);
+        lastMedHash = getMedHash();
+        autoReloadTimer = setInterval(function() {
+            if (!roomId) return;
+            apiCall('GET', '/api/room/' + roomId, null, function(status, data) {
+                if (status !== 200 || !data) return;
+                if (typeof data === 'string') data = JSON.parse(data);
+                var oldHash = lastMedHash;
+                roomData = data;
+                var newHash = getMedHash();
+                if (newHash !== oldHash) {
+                    lastMedHash = newHash;
+                    renderMedicines();
+                    var badge = document.getElementById('reloadBadge');
+                    badge.classList.add('show');
+                    setTimeout(function() { badge.classList.remove('show'); }, 2000);
+                }
+            });
+        }, 30000);
+    }
+
+    // === GS1コード入力（🏷️ボタンから直行） ===
+    window.openScanInput = function() {
+        openAddModal();
+        setTimeout(function() {
+            document.getElementById('gs1CodeInput').focus();
+            showToast('🏷️ バーコード下の数字を入力してください');
+        }, 200);
+    };
+    function onBarcodeDetected(code) {
+        // バイブレーション
+        if (navigator.vibrate) navigator.vibrate(100);
+
+        // GS1バーコードをパース
+        var gs1 = parseGS1(code);
+
+        if (gs1.gtin || gs1.expiry || gs1.lot) {
+            // GS1形式が検出された
+            document.getElementById('scannerResult').innerHTML =
+                '<div class="code">🏷️ GS1バーコード検出</div>' +
+                '<div class="hint">' +
+                    (gs1.gtin ? 'GTIN: ' + gs1.gtin + '<br>' : '') +
+                    (gs1.expiry ? '有効期限: ' + gs1.expiry + '<br>' : '') +
+                    (gs1.lot ? 'ロット: ' + gs1.lot : '') +
+                '</div>';
+
+            // GTINで登録済み薬剤を検索
+            var found = null;
+            if (roomData && roomData.medicines) {
+                found = roomData.medicines.find(function(m) {
+                    return m.barcode === gs1.gtin || m.barcode === code;
+                });
+            }
+
+            setTimeout(function() {
+                closeScanner();
+                if (found) {
+                    openEditModal(found);
+                    showToast('🏷️ ' + found.name + ' が見つかりました');
+                } else {
+                    openAddModal();
+                    document.getElementById('medName').setAttribute('data-barcode', gs1.gtin || code);
+                    // 有効期限を自動入力
+                    if (gs1.expiry) {
+                        document.getElementById('medExpiry').value = gs1.expiry;
+                    }
+                    // ロット番号をメモに入力
+                    if (gs1.lot) {
+                        document.getElementById('medMemo').value = 'ロット: ' + gs1.lot;
+                    }
+                    showToast('📷 GS1スキャン完了 → 薬剤名を入力してください');
+                }
+            }, 800);
+        } else {
+            // 通常バーコード（JAN等）
+            document.getElementById('scannerResult').innerHTML =
+                '<div class="code">🏷️ ' + code + '</div>' +
+                '<div class="hint">検索中...</div>';
+
+            var found = null;
+            if (roomData && roomData.medicines) {
+                found = roomData.medicines.find(function(m) { return m.barcode === code; });
+            }
+            if (found) {
+                closeScanner();
+                openEditModal(found);
+                showToast('🏷️ ' + found.name + ' が見つかりました');
+            } else {
+                setTimeout(function() {
+                    closeScanner();
+                    openAddModal();
+                    document.getElementById('medName').value = '';
+                    document.getElementById('medName').setAttribute('data-barcode', code);
+                    showToast('📷 バーコード: ' + code + ' → 新規登録');
+                }, 500);
+            }
+        }
+    }
+
+    // === GS1バーコードパーサー ===
+    function parseGS1(raw) {
+        var result = { gtin: '', expiry: '', lot: '', raw: raw };
+        // FNC1/GS文字を除去、括弧形式とraw形式の両方に対応
+        var data = raw.replace(/[\x1d\x00]/g, '|');
+
+        // 括弧形式: (01)14987350027952(17)280300(10)250421VA
+        var parenMatch = data.match(/\(01\)(\d{14})/);
+        if (parenMatch) {
+            result.gtin = parenMatch[1];
+            var expiryMatch = data.match(/\(17\)(\d{6})/);
+            if (expiryMatch) {
+                result.expiry = parseGS1Date(expiryMatch[1]);
+            }
+            var lotMatch = data.match(/\(10\)([^(|]+)/);
+            if (lotMatch) {
+                result.lot = lotMatch[1].trim();
+            }
+            return result;
+        }
+
+        // raw形式: 011498735002795217280300102504​21VA
+        // AI 01 = 14桁固定, AI 17 = 6桁固定, AI 10 = 可変長
+        if (data.length >= 16 && data.substring(0, 2) === '01') {
+            result.gtin = data.substring(2, 16);
+            var rest = data.substring(16);
+            if (rest.length >= 8 && rest.substring(0, 2) === '17') {
+                result.expiry = parseGS1Date(rest.substring(2, 8));
+                rest = rest.substring(8);
+            }
+            if (rest.length >= 2 && rest.substring(0, 2) === '10') {
+                var lotEnd = rest.indexOf('|');
+                result.lot = lotEnd >= 0 ? rest.substring(2, lotEnd) : rest.substring(2);
+                result.lot = result.lot.trim();
+            }
+            return result;
+        }
+
+        return result;
+    }
+
+    // GS1日付パース: YYMMDD → YYYY-MM-DD
+    function parseGS1Date(yymmdd) {
+        if (!yymmdd || yymmdd.length !== 6) return '';
+        var yy = parseInt(yymmdd.substring(0, 2));
+        var mm = yymmdd.substring(2, 4);
+        var dd = yymmdd.substring(4, 6);
+        var yyyy = yy >= 50 ? 1900 + yy : 2000 + yy;
+        // dd=00の場合は月末
+        if (dd === '00') dd = '28';
+        return yyyy + '-' + mm + '-' + dd;
+    }
+
+    // === 薬剤リスト描画 ===
+    function renderMedicines() {
+        if (!roomData) return;
+        var meds = roomData.medicines || [];
+        var list = document.getElementById('medList');
+        var empty = document.getElementById('emptyMsg');
+        var statsBar = document.getElementById('statsBar');
+        list.innerHTML = '';
+
+        // ステータス計算
+        var expired = 0, warning = 0, safe = 0, outOfStock = 0;
+        var alertMeds = [];
+
+        // ソート: 期限切れ→期限近い→安全の順
+        meds.sort(function(a, b) {
+            var sa = getExpiryStatus(a.expiryDate);
+            var sb = getExpiryStatus(b.expiryDate);
+            if (sa.days === null) return 1;
+            if (sb.days === null) return -1;
+            return sa.days - sb.days;
+        });
+
+        // フィルタ＆描画
+        var filtered = [];
+        for (var i = 0; i < meds.length; i++) {
+            var m = meds[i];
+            var es = getExpiryStatus(m.expiryDate);
+            var isOut = m.quantity <= 0;
+
+            if (isOut) outOfStock++;
+            else if (es.status === 'danger') { expired++; alertMeds.push(m); }
+            else if (es.status === 'warn') { warning++; alertMeds.push(m); }
+            else safe++;
+
+            // フィルタ
+            var show = true;
+            if (currentFilter === 'danger' && es.status !== 'danger') show = false;
+            if (currentFilter === 'warn' && es.status !== 'warn') show = false;
+            if (currentFilter === 'safe' && es.status !== 'safe') show = false;
+            if (currentFilter === 'out' && !isOut) show = false;
+            if (show && searchQuery) {
+                var q = searchQuery.toLowerCase();
+                if (m.name.toLowerCase().indexOf(q) === -1 &&
+                    (m.location || '').toLowerCase().indexOf(q) === -1 &&
+                    (m.category || '').toLowerCase().indexOf(q) === -1) show = false;
+            }
+            if (show) filtered.push(m);
+        }
+
+        // 統計
+        document.getElementById('expiredCount').textContent = expired;
+        document.getElementById('warningCount').textContent = warning;
+        document.getElementById('safeCount').textContent = safe;
+        statsBar.classList.remove('hidden');
+
+        // アラート表示
+        renderAlerts(alertMeds);
+
+        if (filtered.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+
+        for (var fi = 0; fi < filtered.length; fi++) {
+            var med = filtered[fi];
+            var status = getExpiryStatus(med.expiryDate);
+            var isOutOfStock = med.quantity <= 0;
+
+            var card = document.createElement('div');
+            card.className = 'med-card' + (isOutOfStock ? ' status-out' : ' status-' + status.status);
+
+            // ヘッダー
+            var header = document.createElement('div');
+            header.className = 'med-header';
+
+            var icon = document.createElement('div');
+            icon.className = 'med-icon';
+            icon.textContent = isOutOfStock ? '📦' : (status.status === 'danger' ? '🔴' : (status.status === 'warn' ? '🟡' : '🟢'));
+
+            var info = document.createElement('div');
+            info.className = 'med-info';
+            var nameEl = document.createElement('div');
+            nameEl.className = 'med-name';
+            nameEl.textContent = med.name;
+            var metaEl = document.createElement('div');
+            metaEl.className = 'med-meta';
+            metaEl.textContent = '期限: ' + formatDate(med.expiryDate);
+            info.appendChild(nameEl);
+            info.appendChild(metaEl);
+
+            var actions = document.createElement('div');
+            actions.className = 'med-actions';
+            var badge = document.createElement('span');
+            badge.className = 'med-badge ' + (isOutOfStock ? 'badge-out' : 'badge-' + status.status);
+            badge.textContent = isOutOfStock ? '在庫切れ' : status.label;
+            var editBtn = document.createElement('button');
+            editBtn.className = 'btn-icon btn-outline';
+            editBtn.textContent = '✏️';
+            editBtn.style.marginLeft = '4px';
+            (function(m) { editBtn.addEventListener('click', function(e) { e.stopPropagation(); openEditModal(m); }); })(med);
+            actions.appendChild(badge);
+            actions.appendChild(editBtn);
+
+            header.appendChild(icon);
+            header.appendChild(info);
+            header.appendChild(actions);
+            card.appendChild(header);
+
+            // 数量操作
+            var qtyRow = document.createElement('div');
+            qtyRow.className = 'med-qty';
+            var minusBtn = document.createElement('button');
+            minusBtn.className = 'qty-btn';
+            minusBtn.textContent = '−';
+            (function(m) { minusBtn.addEventListener('click', function() { adjustQty(m.mid, -1); }); })(med);
+            var qtyVal = document.createElement('span');
+            qtyVal.className = 'qty-val';
+            qtyVal.textContent = med.quantity + (med.unit || '個');
+            var plusBtn = document.createElement('button');
+            plusBtn.className = 'qty-btn';
+            plusBtn.textContent = '＋';
+            (function(m) { plusBtn.addEventListener('click', function() { adjustQty(m.mid, 1); }); })(med);
+            qtyRow.appendChild(minusBtn);
+            qtyRow.appendChild(qtyVal);
+            qtyRow.appendChild(plusBtn);
+            card.appendChild(qtyRow);
+
+            // 詳細
+            if (med.location || med.category) {
+                var detail = document.createElement('div');
+                detail.className = 'med-detail';
+                if (med.location) { var loc = document.createElement('span'); loc.textContent = med.location; detail.appendChild(loc); }
+                if (med.category) { var cat = document.createElement('span'); cat.textContent = med.category; detail.appendChild(cat); }
+                card.appendChild(detail);
+            }
+
+            list.appendChild(card);
+        }
+    }
+
+    // === アラート描画 ===
+    function renderAlerts(alertMeds) {
+        var container = document.getElementById('expiryAlerts');
+        container.innerHTML = '';
+        if (alertMeds.length === 0) return;
+
+        var card = document.createElement('div');
+        card.style.cssText = 'background:linear-gradient(135deg,#7f1d1d,#991b1b);border-radius:12px;padding:12px;margin-bottom:10px;border:1px solid #dc2626;';
+        var title = document.createElement('div');
+        title.style.cssText = 'font-size:13px;font-weight:900;color:#fca5a5;margin-bottom:6px;';
+        title.textContent = '⚠️ 期限に注意が必要な薬剤 (' + alertMeds.length + '件)';
+        card.appendChild(title);
+
+        for (var i = 0; i < Math.min(alertMeds.length, 5); i++) {
+            var m = alertMeds[i];
+            var es = getExpiryStatus(m.expiryDate);
+            var row = document.createElement('div');
+            row.style.cssText = 'font-size:12px;color:#fecaca;padding:2px 0;';
+            row.textContent = (es.status === 'danger' ? '🔴' : '🟡') + ' ' + m.name + ' — ' + es.label + ' (' + formatDate(m.expiryDate) + ')';
+            card.appendChild(row);
+        }
+        if (alertMeds.length > 5) {
+            var more = document.createElement('div');
+            more.style.cssText = 'font-size:11px;color:#f87171;margin-top:4px;';
+            more.textContent = '他 ' + (alertMeds.length - 5) + '件...';
+            card.appendChild(more);
+        }
+        container.appendChild(card);
+    }
+
+    // === 数量増減 ===
+    function adjustQty(mid, delta) {
+        apiCall('POST', '/api/room/' + roomId + '/adjust', { mid: mid, delta: delta, updatedBy: myName }, function(status, data) {
+            if (status === 200) {
+                loadRoom();
+                showToast(delta > 0 ? '＋1 追加しました' : '−1 使用しました');
+            }
+        });
+    }
+
+    // === 検索 ===
+    document.getElementById('searchInput').addEventListener('input', function() {
+        searchQuery = this.value.trim();
+        renderMedicines();
+    });
+
+    // === フィルター ===
+    document.getElementById('filterTabs').addEventListener('click', function(e) {
+        var tab = e.target.closest('.filter-tab');
+        if (!tab) return;
+        var tabs = document.querySelectorAll('.filter-tab');
+        for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+        tab.classList.add('active');
+        currentFilter = tab.getAttribute('data-filter');
+        renderMedicines();
+    });
+
+    // === 追加モーダル ===
+    window.openAddModal = function() {
+        document.getElementById('addModal').classList.add('show');
+        document.getElementById('medName').value = '';
+        document.getElementById('medQty').value = '1';
+        document.getElementById('medExpiry').value = '';
+        document.getElementById('medLocation').value = '';
+        document.getElementById('medCategory').value = '';
+        document.getElementById('medMemo').value = '';
+        document.getElementById('gs1CodeInput').value = '';
+        document.getElementById('gs1ParseResult').innerHTML = '';
+        document.getElementById('medName').removeAttribute('data-barcode');
+        document.getElementById('addAutoList').classList.remove('show');
+        setTimeout(function() { document.getElementById('medName').focus(); }, 100);
+    };
+
+    // === GS1コード手動入力解析 ===
+    document.getElementById('gs1ParseBtn').addEventListener('click', function() {
+        var code = document.getElementById('gs1CodeInput').value.trim();
+        if (!code) { alert('GS1コードを入力してください'); return; }
+        var gs1 = parseGS1(code);
+        if (gs1.gtin || gs1.expiry || gs1.lot) {
+            var resultHtml = '';
+            if (gs1.gtin) resultHtml += '✅ GTIN: ' + gs1.gtin + '<br>';
+            if (gs1.expiry) {
+                resultHtml += '✅ 有効期限: ' + gs1.expiry + ' → 自動入力済<br>';
+                document.getElementById('medExpiry').value = gs1.expiry;
+            }
+            if (gs1.lot) {
+                resultHtml += '✅ ロット: ' + gs1.lot + ' → メモに入力済';
+                document.getElementById('medMemo').value = 'ロット: ' + gs1.lot;
+            }
+            document.getElementById('gs1ParseResult').innerHTML = resultHtml;
+            document.getElementById('medName').setAttribute('data-barcode', gs1.gtin || code);
+            showToast('🏷️ GS1コード解析完了！');
+
+            // GTINから薬剤名を自動検索
+            if (gs1.gtin) {
+                document.getElementById('gs1ParseResult').innerHTML += '<br>🔍 薬剤名を検索中...';
+                fetch('/api/drug-lookup?code=' + encodeURIComponent(gs1.gtin))
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.name) {
+                            document.getElementById('medName').value = data.name;
+                            document.getElementById('gs1ParseResult').innerHTML += '<br>✅ 薬剤名: ' + data.name + ' → 自動入力済';
+                            showToast('💊 薬剤名も自動入力しました！');
+                        } else {
+                            document.getElementById('gs1ParseResult').innerHTML += '<br>⚠️ 薬剤名が見つかりませんでした。手動で入力してください。';
+                            document.getElementById('medName').focus();
+                        }
+                    })
+                    .catch(function() {
+                        document.getElementById('gs1ParseResult').innerHTML += '<br>⚠️ 薬剤名検索に失敗。手動で入力してください。';
+                        document.getElementById('medName').focus();
+                    });
+            }
+        } else {
+            document.getElementById('gs1ParseResult').innerHTML = '<span style="color:#f87171;">❌ 解析できませんでした。(01)...(17)...(10)...形式で入力してください</span>';
+        }
+    });
+    // Enterキーでも解析
+    document.getElementById('gs1CodeInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('gs1ParseBtn').click();
+        }
+    });
+
+    // === 予測検索セットアップ ===
+    function setupAutocomplete(inputId, listId) {
+        var input = document.getElementById(inputId);
+        var list = document.getElementById(listId);
+        var activeIdx = -1;
+
+        function getSuggestions(query) {
+            if (!query || query.length < 1) return [];
+            var q = query.toLowerCase();
+            var qKata = hiraganaToKatakana(q);
+            var qHira = katakanaToHiragana(q);
+            var results = [];
+            var seen = {};
+
+            function matches(target) {
+                var t = target.toLowerCase();
+                var tKata = hiraganaToKatakana(t);
+                var tHira = katakanaToHiragana(t);
+                return t.indexOf(q) !== -1 || t.indexOf(qKata) !== -1 || t.indexOf(qHira) !== -1
+                    || tKata.indexOf(qKata) !== -1 || tHira.indexOf(qHira) !== -1;
+            }
+
+            // 登録済み薬剤名から検索（優先）
+            if (roomData && roomData.medicines) {
+                for (var i = 0; i < roomData.medicines.length; i++) {
+                    var name = roomData.medicines[i].name;
+                    if (matches(name) && !seen[name]) {
+                        results.push({ name: name, source: '登録済' });
+                        seen[name] = true;
+                    }
+                }
+            }
+            // 一般薬剤名リストから検索
+            for (var j = 0; j < commonMedicines.length; j++) {
+                var cm = commonMedicines[j];
+                if (matches(cm) && !seen[cm]) {
+                    results.push({ name: cm, source: '候補' });
+                    seen[cm] = true;
+                }
+            }
+            return results.slice(0, 8);
+        }
+
+        function renderList(items) {
+            list.innerHTML = '';
+            activeIdx = -1;
+            if (items.length === 0) { list.classList.remove('show'); return; }
+            for (var i = 0; i < items.length; i++) {
+                var div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.setAttribute('data-idx', i);
+                var q = input.value.toLowerCase();
+                var name = items[i].name;
+                var idx = name.toLowerCase().indexOf(q);
+                if (idx >= 0 && q.length > 0) {
+                    div.innerHTML = escapeHtml(name.substring(0, idx)) + '<span class="match">' + escapeHtml(name.substring(idx, idx + q.length)) + '</span>' + escapeHtml(name.substring(idx + q.length));
+                } else {
+                    div.textContent = name;
+                }
+                if (items[i].source === '登録済') {
+                    var tag = document.createElement('span');
+                    tag.style.cssText = 'float:right;font-size:10px;color:#64748b;';
+                    tag.textContent = '📋 登録済';
+                    div.appendChild(tag);
+                }
+                (function(n) {
+                    div.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        input.value = n;
+                        list.classList.remove('show');
+                    });
+                })(items[i].name);
+                list.appendChild(div);
+            }
+            list.classList.add('show');
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        input.addEventListener('input', function() {
+            var items = getSuggestions(this.value.trim());
+            renderList(items);
+        });
+        input.addEventListener('focus', function() {
+            if (this.value.trim().length >= 1) {
+                var items = getSuggestions(this.value.trim());
+                renderList(items);
+            }
+        });
+        input.addEventListener('blur', function() {
+            setTimeout(function() { list.classList.remove('show'); }, 150);
+        });
+        input.addEventListener('keydown', function(e) {
+            var items = list.querySelectorAll('.autocomplete-item');
+            if (items.length === 0) return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIdx = Math.min(activeIdx + 1, items.length - 1);
+                for (var i = 0; i < items.length; i++) items[i].classList.toggle('active', i === activeIdx);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIdx = Math.max(activeIdx - 1, 0);
+                for (var i = 0; i < items.length; i++) items[i].classList.toggle('active', i === activeIdx);
+            } else if (e.key === 'Enter' && activeIdx >= 0) {
+                e.preventDefault();
+                input.value = items[activeIdx].textContent.replace('📋 登録済','').trim();
+                list.classList.remove('show');
+            }
+        });
+    }
+    setupAutocomplete('medName', 'addAutoList');
+    setupAutocomplete('editName', 'editAutoList');
+    window.closeAddModal = function() {
+        document.getElementById('addModal').classList.remove('show');
+    };
+
+    // モーダル背景クリックで閉じる
+    document.getElementById('addModal').addEventListener('click', function(e) {
+        if (e.target === this) closeAddModal();
+    });
+    document.getElementById('editModal').addEventListener('click', function(e) {
+        if (e.target === this) closeEditModal();
+    });
+
+    // 追加実行
+    document.getElementById('addMedBtn').addEventListener('click', function() {
+        var name = document.getElementById('medName').value.trim();
+        var qty = parseInt(document.getElementById('medQty').value) || 1;
+        var unit = document.getElementById('medUnit').value;
+        var expiry = document.getElementById('medExpiry').value;
+        var location = document.getElementById('medLocation').value.trim();
+        var category = document.getElementById('medCategory').value;
+        var memo = document.getElementById('medMemo').value.trim();
+        var barcode = document.getElementById('medName').getAttribute('data-barcode') || '';
+
+        if (!name) { alert('薬剤名を入力してください'); return; }
+        if (!expiry) { alert('消費期限を入力してください'); return; }
+
+        apiCall('POST', '/api/room/' + roomId + '/add', {
+            name: name, quantity: qty, unit: unit, expiryDate: expiry,
+            location: location, category: category, memo: memo, barcode: barcode, addedBy: myName
+        }, function(status, data) {
+            if (status === 200) {
+                closeAddModal();
+                showToast('✅ ' + name + ' を追加しました');
+                loadRoom();
+            } else {
+                alert('追加に失敗: ' + (data ? data.error : '不明なエラー'));
+            }
+        });
+    });
+
+    // === 編集モーダル ===
+    window.openEditModal = function(med) {
+        document.getElementById('editModal').classList.add('show');
+        document.getElementById('editMid').value = med.mid;
+        document.getElementById('editName').value = med.name;
+        document.getElementById('editQty').value = med.quantity;
+        document.getElementById('editUnit').value = med.unit || '個';
+        document.getElementById('editExpiry').value = med.expiryDate;
+        document.getElementById('editLocation').value = med.location || '';
+        document.getElementById('editCategory').value = med.category || '';
+        document.getElementById('editMemo').value = med.memo || '';
+    };
+    window.closeEditModal = function() {
+        document.getElementById('editModal').classList.remove('show');
+    };
+
+    // 保存
+    document.getElementById('saveEditBtn').addEventListener('click', function() {
+        var mid = document.getElementById('editMid').value;
+        var data = {
+            mid: mid,
+            name: document.getElementById('editName').value.trim(),
+            quantity: parseInt(document.getElementById('editQty').value) || 0,
+            unit: document.getElementById('editUnit').value,
+            expiryDate: document.getElementById('editExpiry').value,
+            location: document.getElementById('editLocation').value.trim(),
+            category: document.getElementById('editCategory').value,
+            memo: document.getElementById('editMemo').value.trim(),
+            updatedBy: myName,
+        };
+        if (!data.name) { alert('薬剤名を入力してください'); return; }
+
+        apiCall('POST', '/api/room/' + roomId + '/update', data, function(status) {
+            if (status === 200) {
+                loadRoom();
+                closeEditModal();
+                showToast('✅ 更新しました');
+            }
+        });
+    });
+
+    // 削除
+    document.getElementById('deleteMedBtn').addEventListener('click', function() {
+        var mid = document.getElementById('editMid').value;
+        var med = roomData.medicines.find(function(m) { return m.mid === mid; });
+        if (!confirm(med.name + ' を削除しますか？')) return;
+
+        apiCall('POST', '/api/room/' + roomId + '/delete', { mid: mid }, function(status) {
+            if (status === 200) {
+                loadRoom();
+                closeEditModal();
+                showToast('🗑 削除しました');
+            }
+        });
+    });
+
+    // === URL共有 ===
+    document.getElementById('shareRoomBtn').addEventListener('click', function() {
+        var url = location.origin + '/room/' + roomId;
+        var text = '💊 ' + (roomData ? roomData.name : '薬剤管理') + '\n\n在庫管理はこちら👇\n' + url;
+        if (navigator.share) {
+            navigator.share({ title: roomData ? roomData.name : '薬剤管理', text: text, url: url }).catch(function() {});
+        } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(function() {
+                showToast('📋 URLをコピーしました');
+            });
+        }
+    });
+
+    // === 通知 ===
+    function checkNotificationPermission() {
+        var banner = document.getElementById('notifyBanner');
+        if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+            banner.classList.add('hidden');
+            return;
+        }
+        if (Notification.permission === 'granted') {
+            banner.classList.add('hidden');
+        } else if (Notification.permission !== 'denied') {
+            banner.classList.remove('hidden');
+        } else {
+            banner.classList.add('hidden');
+        }
+    }
+
+    window.requestNotification = function() {
+        if (!('Notification' in window)) return;
+        Notification.requestPermission().then(function(perm) {
+            if (perm === 'granted') {
+                showToast('🔔 通知を有効にしました');
+                document.getElementById('notifyBanner').classList.add('hidden');
+                // ローカル通知スケジュール設定
+                scheduleLocalCheck();
+            }
+        });
+    };
+
+    // ローカル期限チェック（アプリ起動時に毎回実行）
+    function scheduleLocalCheck() {
+        if (!roomData || !('Notification' in window) || Notification.permission !== 'granted') return;
+        var meds = roomData.medicines || [];
+        var alerts = [];
+        for (var i = 0; i < meds.length; i++) {
+            var es = getExpiryStatus(meds[i].expiryDate);
+            if (es.status === 'danger' || es.status === 'warn') {
+                alerts.push(meds[i].name + '(' + es.label + ')');
+            }
+        }
+        if (alerts.length > 0) {
+            // 最後の通知からn時間以上経っていたら通知
+            var lastNotify = 0;
+            try { lastNotify = parseInt(localStorage.getItem('med_last_notify_' + roomId) || '0'); } catch(e) {}
+            var now = Date.now();
+            if (now - lastNotify > 8 * 60 * 60 * 1000) { // 8時間に1回
+                new Notification('💊 消費期限のお知らせ', {
+                    body: alerts.slice(0, 5).join('\n') + (alerts.length > 5 ? '\n他' + (alerts.length-5) + '件' : ''),
+                    icon: '/icon-192.png',
+                });
+                try { localStorage.setItem('med_last_notify_' + roomId, String(now)); } catch(e) {}
+            }
+        }
+    }
+
+    init();
+})();
+</script>
+</body>
+</html>

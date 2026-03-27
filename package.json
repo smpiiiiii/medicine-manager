@@ -1,0 +1,12 @@
+{
+  "name": "medicine-manager",
+  "version": "1.0.0",
+  "description": "薬剤在庫管理・消費期限通知アプリ",
+  "scripts": {
+    "build": "echo 'No build step needed'"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.34.3",
+    "web-push": "^3.6.7"
+  }
+}
