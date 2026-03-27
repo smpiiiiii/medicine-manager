@@ -148,6 +148,19 @@
     </style>
 </head>
 <body>
+<script>
+// PWAホーム画面から開いた時に最後のルームへ自動リダイレクト
+(function() {
+    if (location.pathname === '/' || location.pathname === '') {
+        try {
+            var lastRoom = localStorage.getItem('med_last_room');
+            if (lastRoom && lastRoom.indexOf('/room/') === 0) {
+                location.href = lastRoom;
+            }
+        } catch(e) {}
+    }
+})();
+</script>
 
 <div class="header">
     <h1 id="headerTitle">💊 薬剤在庫マネージャー</h1>
@@ -443,7 +456,10 @@
         var history = getHistory().filter(function(h) { return h.id !== id; });
         history.unshift({ id: id, name: name, date: new Date().toISOString() });
         if (history.length > 10) history = history.slice(0, 10);
-        try { localStorage.setItem('med_history', JSON.stringify(history)); } catch(e) {}
+        try {
+            localStorage.setItem('med_history', JSON.stringify(history));
+            localStorage.setItem('med_last_room', '/room/' + id);
+        } catch(e) {}
     }
     function renderHistory() {
         var history = getHistory();
