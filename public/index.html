@@ -150,12 +150,15 @@
 <body>
 <script>
 // PWAホーム画面から開いた時に最後のルームへ自動リダイレクト
+// ページ最上部で実行し、リダイレクト中は他の処理を止める
 (function() {
     if (location.pathname === '/' || location.pathname === '') {
         try {
             var lastRoom = localStorage.getItem('med_last_room');
             if (lastRoom && lastRoom.indexOf('/room/') === 0) {
-                location.href = lastRoom;
+                window.stop(); // ページの読み込みを停止
+                location.replace(lastRoom); // replaceでリダイレクト（戻るボタン対策）
+                return;
             }
         } catch(e) {}
     }
