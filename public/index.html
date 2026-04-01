@@ -379,12 +379,22 @@
         <div class="modal-handle"></div>
         <h2>📄 CSVインポート</h2>
         <div id="csvStep1">
-            <div class="csv-dropzone" id="csvDropzone">
-                <div class="drop-icon">📁</div>
-                <div class="drop-text">CSVファイルをドラッグ＆ドロップ</div>
-                <div class="drop-sub">または タップしてファイルを選択</div>
+            <!-- テキスト貼り付け（スマホ向け） -->
+            <div style="margin-bottom:12px;">
+                <div style="font-size:13px;font-weight:900;color:#38bdf8;margin-bottom:8px;">📋 テキストを貼り付け</div>
+                <textarea id="csvTextInput" style="width:100%;min-height:120px;resize:vertical;border:1.5px solid #334155;border-radius:10px;padding:10px;font-size:12px;font-family:'Noto Sans JP',monospace;background:#0f172a;color:#e2e8f0;line-height:1.5;" placeholder="ここにCSVテキストを貼り付け&#10;&#10;例:&#10;ロキソニン錠60mg,10,箱,2027-03-15,棚A-1,内服薬&#10;カロナール錠500,5,箱,2026-12-01,棚A-2,内服薬"></textarea>
+                <button class="btn btn-primary" id="csvPasteBtn" style="margin-top:8px;">🔍 貼り付けたテキストを読み込む</button>
+            </div>
+
+            <div style="text-align:center;color:#475569;font-size:12px;margin:8px 0;">── または ──</div>
+
+            <!-- ファイル選択 -->
+            <div class="csv-dropzone" id="csvDropzone" style="padding:20px 16px;">
+                <div class="drop-icon" style="font-size:28px;margin-bottom:4px;">📁</div>
+                <div class="drop-text">CSVファイルを選択</div>
                 <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" style="display:none">
             </div>
+
             <div style="margin-top:12px;padding:12px;background:#0f172a;border-radius:10px;border:1px solid #334155;">
                 <div style="font-size:12px;font-weight:900;color:#94a3b8;margin-bottom:6px;">📋 CSV形式について</div>
                 <div style="font-size:11px;color:#64748b;line-height:1.7;">
@@ -393,7 +403,10 @@
                     <b style="color:#e2e8f0;">任意列:</b> 数量, 単位, 保管場所, カテゴリ, メモ<br>
                     日付形式: 2026-04-01 / 2026/04/01 / 20260401 に対応
                 </div>
-                <span class="csv-template-link" id="csvDownloadTemplate">📥 テンプレートCSVをダウンロード</span>
+                <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                    <span class="csv-template-link" id="csvDownloadTemplate">📥 テンプレートをダウンロード</span>
+                    <span class="csv-template-link" id="csvCopyTemplate">📋 テンプレートをコピー</span>
+                </div>
             </div>
             <button class="btn btn-outline" onclick="closeCsvModal()">キャンセル</button>
         </div>
@@ -1417,6 +1430,7 @@
         document.getElementById('csvStep2').classList.add('hidden');
         document.getElementById('csvStep3').classList.add('hidden');
         document.getElementById('csvFileInput').value = '';
+        document.getElementById('csvTextInput').value = '';
         csvParsedData = [];
     };
     window.closeCsvModal = function() {
@@ -1445,18 +1459,36 @@
     });
 
     // テンプレートCSVダウンロード
+    var templateCsvText = '薬剤名,数量,単位,消費期限,保管場所,カテゴリ,メモ\nロキソニン錠60mg,10,箱,2027-03-15,棚A-1,内服薬,\nカロナール錠500,5,箱,2026-12-01,棚A-2,内服薬,備考メモ\nヒルドイドソフト軟膏,3,本,2027-06-30,冷蔵庫,外用薬,';
+
     document.getElementById('csvDownloadTemplate').addEventListener('click', function() {
         var bom = '\uFEFF';
-        var csv = bom + '薬剤名,数量,単位,消費期限,保管場所,カテゴリ,メモ\n';
-        csv += 'ロキソニン錠60mg,10,箱,2027-03-15,棚A-1,内服薬,\n';
-        csv += 'カロナール錠500,5,箱,2026-12-01,棚A-2,内服薬,備考メモ\n';
-        csv += 'ヒルドイドソフト軟膏,3,本,2027-06-30,冷蔵庫,外用薬,\n';
-        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        var blob = new Blob([bom + templateCsvText], { type: 'text/csv;charset=utf-8' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url; a.download = '薬剤インポートテンプレート.csv'; a.click();
         URL.revokeObjectURL(url);
         showToast('📥 テンプレートをダウンロードしました');
+    });
+
+    // テンプレートをクリップボードにコピー
+    document.getElementById('csvCopyTemplate').addEventListener('click', function() {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(templateCsvText).then(function() {
+                showToast('📋 テンプレートをコピーしました');
+            });
+        } else {
+            // フォールバック: テキストエリアに貼り付け
+            document.getElementById('csvTextInput').value = templateCsvText;
+            showToast('📋 テキスト欄にテンプレートを入力しました');
+        }
+    });
+
+    // テキスト貼り付けボタン
+    document.getElementById('csvPasteBtn').addEventListener('click', function() {
+        var text = document.getElementById('csvTextInput').value.trim();
+        if (!text) { alert('テキストを貼り付けてください'); return; }
+        parseCsvAndPreview(text);
     });
 
     // CSVファイル読み込み
