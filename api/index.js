@@ -34,19 +34,8 @@ module.exports = async (req, res) => {
   const url = new URL(req.url, `https://${req.headers.host}`);
   const pathname = url.pathname;
 
-  // 認証チェック（/api/login 以外）
-  if (pathname !== '/api/login') {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.slice(7);
-    const session = await redis.get(`session:${token}`);
-    if (!session) return res.status(401).json({ error: 'Invalid token' });
-  }
-
   try {
-    // === ログインエンドポイント ===
+    // === ログインエンドポイント（互換性のため残す） ===
     if (pathname === '/api/login' && req.method === 'POST') {
       const body = await parseBody(req);
       const passcode = body.passcode || '';
