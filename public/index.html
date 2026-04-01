@@ -111,7 +111,9 @@
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #10b981; color: #fff; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 700; z-index: 300; box-shadow: 0 4px 12px rgba(0,0,0,.3); transition: all .3s; opacity: 0; pointer-events: none; }
         .toast.show { opacity: 1; }
 
-        .hidden { display: none; }
+        .hidden { display: none !important; }
+        #fabBtn { display: none; }
+        #fabBtn.fab-show { display: flex !important; }
 
         /* CSVインポートモーダル */
         .csv-dropzone { border: 2px dashed #334155; border-radius: 14px; padding: 32px 16px; text-align: center; cursor: pointer; transition: all .3s; background: rgba(14,165,233,.04); }
@@ -248,7 +250,7 @@
 </div>
 
 <!-- FAB（追加ボタン） -->
-<div id="fabBtn" class="hidden" style="position:fixed;bottom:70px;right:16px;z-index:99;display:flex;flex-direction:column;gap:10px;align-items:flex-end;">
+<div id="fabBtn" style="position:fixed;bottom:70px;right:16px;z-index:99;flex-direction:column;gap:10px;align-items:flex-end;">
     <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:16px;padding:0;box-shadow:0 4px 16px rgba(16,185,129,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#10b981,#059669);" onclick="openCsvModal()">📄</button>
     <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:18px;padding:0;box-shadow:0 4px 16px rgba(245,158,11,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f59e0b,#d97706);" onclick="openScanInput()">🏷️</button>
     <button class="btn btn-primary" style="width:56px;height:56px;border-radius:50%;font-size:24px;padding:0;box-shadow:0 4px 16px rgba(14,165,233,.4);display:flex;align-items:center;justify-content:center;" onclick="openAddModal()">＋</button>
@@ -599,7 +601,7 @@
         // ルームビューを隠し、トップビューを表示
         roomView.classList.add('hidden');
         topView.classList.remove('hidden');
-        fabBtn.classList.add('hidden');
+        fabBtn.classList.remove('fab-show');
         // ローカルストレージの部屋情報をクリア
         delete window.roomId;
         delete window.roomData;
@@ -622,7 +624,7 @@
     function loadRoom() {
         topView.classList.add('hidden');
         roomView.classList.remove('hidden');
-        fabBtn.classList.remove('hidden');
+        fabBtn.classList.add('fab-show');
 
         apiCall('GET', '/api/room/' + roomId, null, function(status, data) {
             if (status !== 200 || !data) {
