@@ -165,25 +165,47 @@
         /* 自動リロードインジケーター */
         .auto-reload-badge { position: fixed; top: 8px; right: 8px; background: rgba(16,185,129,.9); color: #fff; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 12px; z-index: 150; opacity: 0; transition: opacity .3s; pointer-events: none; }
         .auto-reload-badge.show { opacity: 1; }
+
+        /* ログイン画面 */
+        .login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0f172a; z-index: 500; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: #1e293b; border-radius: 20px; padding: 32px 24px; width: 90%; max-width: 360px; text-align: center; border: 1px solid #334155; box-shadow: 0 8px 32px rgba(0,0,0,.4); }
+        .login-box .login-icon { font-size: 48px; margin-bottom: 12px; }
+        .login-box h2 { font-size: 18px; font-weight: 900; color: #f1f5f9; margin-bottom: 4px; }
+        .login-box .login-sub { font-size: 12px; color: #64748b; margin-bottom: 20px; }
+        .login-box input { text-align: center; font-size: 20px; letter-spacing: 4px; font-weight: 900; }
+        .login-box .login-error { font-size: 12px; color: #f87171; margin-top: 8px; min-height: 18px; }
     </style>
 </head>
 <body>
 <script>
 // PWAホーム画面から開いた時に最後のルームへ自動リダイレクト
-// ページ最上部で実行し、リダイレクト中は他の処理を止める
+// トークンが存在する場合のみリダイレクト（無限ループ防止）
 (function() {
     if (location.pathname === '/' || location.pathname === '') {
         try {
+            var token = localStorage.getItem('med_auth_token');
             var lastRoom = localStorage.getItem('med_last_room');
-            if (lastRoom && lastRoom.indexOf('/room/') === 0) {
-                window.stop(); // ページの読み込みを停止
-                location.replace(lastRoom); // replaceでリダイレクト（戻るボタン対策）
+            if (token && lastRoom && lastRoom.indexOf('/room/') === 0) {
+                window.stop();
+                location.replace(lastRoom);
                 return;
             }
         } catch(e) {}
     }
 })();
 </script>
+
+<!-- ログイン画面 -->
+<div class="login-overlay" id="loginOverlay" style="display:none">
+    <div class="login-box">
+        <div class="login-icon">💊</div>
+        <h2>薬剤在庫マネージャー</h2>
+        <div class="login-sub">スタッフ共有パスコードを入力してください</div>
+        <input type="password" id="loginPasscode" placeholder="パスコード" inputmode="text" autocomplete="off">
+        <button class="btn btn-primary" id="loginBtn">🔓 ログイン</button>
+        <div class="login-error" id="loginError"></div>
+    </div>
+</div>
 
 <div class="header">
     <h1 id="headerTitle">💊 薬剤在庫マネージャー</h1>
@@ -470,11 +492,14 @@
     var myName = '';
     var currentFilter = 'all';
     var searchQuery = '';
+    var authToken = '';
+    try { authToken = localStorage.getItem('med_auth_token') || ''; } catch(e) {}
 
     // === DOM ===
     var topView = document.getElementById('topView');
     var roomView = document.getElementById('roomView');
     var fabBtn = document.getElementById('fabBtn');
+    var loginOverlay = document.getElementById('loginOverlay');
 
     // === ユーティリティ ===
     function showToast(msg) {
@@ -488,12 +513,75 @@
         var xhr = new XMLHttpRequest();
         xhr.open(method, API + path, true);
         xhr.setRequestHeader('Content-Type', 'application/json');
+        // 認証トークンを付与
+        if (authToken) {
+            xhr.setRequestHeader('Authorization', 'Bearer ' + authToken);
+        }
         xhr.onload = function() {
-            try { cb(xhr.status, JSON.parse(xhr.responseText)); }
+            try {
+                var result = JSON.parse(xhr.responseText);
+                // 401の場合はログイン画面を表示
+                if (xhr.status === 401) {
+                    showLoginScreen();
+                    return;
+                }
+                cb(xhr.status, result);
+            }
             catch(e) { cb(xhr.status, null); }
         };
         xhr.onerror = function() { cb(0, null); };
         xhr.send(data ? JSON.stringify(data) : null);
+    }
+
+    // === ログイン機能 ===
+    function showLoginScreen() {
+        loginOverlay.style.display = 'flex';
+        document.getElementById('loginPasscode').value = '';
+        document.getElementById('loginError').textContent = '';
+        setTimeout(function() { document.getElementById('loginPasscode').focus(); }, 100);
+    }
+    function hideLoginScreen() {
+        loginOverlay.style.display = 'none';
+    }
+    // トークンがなければログイン画面を表示
+    function checkAuth() {
+        if (!authToken) {
+            showLoginScreen();
+            return false;
+        }
+        return true;
+    }
+    document.getElementById('loginBtn').addEventListener('click', doLogin);
+    document.getElementById('loginPasscode').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') doLogin();
+    });
+    function doLogin() {
+        var passcode = document.getElementById('loginPasscode').value.trim();
+        if (!passcode) { document.getElementById('loginError').textContent = 'パスコードを入力してください'; return; }
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', API + '/api/login', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = function() {
+            try {
+                var res = JSON.parse(xhr.responseText);
+                if (xhr.status === 200 && res.token) {
+                    authToken = res.token;
+                    try { localStorage.setItem('med_auth_token', authToken); } catch(e) {}
+                    hideLoginScreen();
+                    showToast('🔓 ログインしました');
+                    // ログイン後に初期化を再実行
+                    init();
+                } else {
+                    document.getElementById('loginError').textContent = '❌ パスコードが違います';
+                }
+            } catch(e) {
+                document.getElementById('loginError').textContent = '通信エラーが発生しました';
+            }
+        };
+        xhr.onerror = function() {
+            document.getElementById('loginError').textContent = '通信エラーが発生しました';
+        };
+        xhr.send(JSON.stringify({ passcode: passcode }));
     }
 
     // === 消費期限ステータス ===
@@ -548,6 +636,9 @@
 
     // === 初期化 ===
     function init() {
+        // 認証チェック — トークンなしならログイン画面
+        if (!checkAuth()) return;
+
         var parts = location.pathname.split('/');
         if (parts.length >= 3 && parts[1] === 'room' && parts[2]) {
             roomId = parts[2];
@@ -601,6 +692,8 @@
         apiCall('GET', '/api/room/' + roomId, null, function(status, data) {
             if (status !== 200 || !data) {
                 alert('ルームが見つかりません');
+                // 無限ループ防止: localStorageの自動リダイレクト先をクリア
+                try { localStorage.removeItem('med_last_room'); } catch(e) {}
                 location.href = '/';
                 return;
             }
