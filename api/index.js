@@ -34,7 +34,31 @@ module.exports = async (req, res) => {
   const url = new URL(req.url, `https://${req.headers.host}`);
   const pathname = url.pathname;
 
+  // 認証チェック（/api/login 以外）
+  if (pathname !== '/api/login') {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const token = authHeader.slice(7);
+    const session = await redis.get(`session:${token}`);
+    if (!session) return res.status(401).json({ error: 'Invalid token' });
+  }
+
   try {
+    // === ログインエンドポイント ===
+    if (pathname === '/api/login' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const passcode = body.passcode || '';
+      if (passcode !== process.env.LOGIN_PASSCODE) {
+        return res.status(401).json({ error: 'Invalid passcode' });
+      }
+      const token = crypto.randomBytes(16).toString('hex');
+      // セッションは30日間有効
+      await redis.set(`session:${token}`, '1', { ex: 60 * 60 * 24 * 30 });
+      return res.status(200).json({ token });
+    }
+
     // === ルーム作成 ===
     if (pathname === '/api/create' && req.method === 'POST') {
       const body = await parseBody(req);
@@ -187,6 +211,53 @@ module.exports = async (req, res) => {
 
       await saveRoom(id, room);
       return res.status(200).json({ status: 'ok' });
+    }
+
+    // === 薬剤一括追加（CSVインポート用） ===
+    if (pathname.match(/^\/api\/room\/[^/]+\/bulk-add$/) && req.method === 'POST') {
+      const id = pathname.split('/')[3];
+      const body = await parseBody(req);
+      let room = await getRoom(id);
+      if (!room) return res.status(404).json({ error: 'Not found' });
+      if (typeof room === 'string') room = JSON.parse(room);
+
+      const items = body.items || [];
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'インポートするデータがありません' });
+      }
+      if (items.length > 200) {
+        return res.status(400).json({ error: '一度に200件までです' });
+      }
+
+      const added = [];
+      const errors = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const name = (item.name || '').trim();
+        const expiryDate = (item.expiryDate || '').trim();
+        if (!name) { errors.push({ row: i + 1, error: '薬剤名が空です' }); continue; }
+        if (!expiryDate) { errors.push({ row: i + 1, error: '消費期限が空です', name }); continue; }
+
+        const medicine = {
+          mid: crypto.randomBytes(4).toString('hex'),
+          name,
+          quantity: parseInt(item.quantity) || 1,
+          unit: (item.unit || '個').trim(),
+          expiryDate,
+          location: (item.location || '').trim(),
+          category: (item.category || '').trim(),
+          memo: (item.memo || '').trim(),
+          barcode: (item.barcode || '').trim(),
+          addedBy: (body.addedBy || '').trim(),
+          addedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        room.medicines.push(medicine);
+        added.push(medicine);
+      }
+
+      await saveRoom(id, room);
+      return res.status(200).json({ status: 'ok', added: added.length, errors });
     }
 
     // === 期限チェック（cron用） ===

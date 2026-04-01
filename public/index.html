@@ -113,6 +113,26 @@
 
         .hidden { display: none; }
 
+        /* CSVインポートモーダル */
+        .csv-dropzone { border: 2px dashed #334155; border-radius: 14px; padding: 32px 16px; text-align: center; cursor: pointer; transition: all .3s; background: rgba(14,165,233,.04); }
+        .csv-dropzone:hover, .csv-dropzone.drag-over { border-color: #0ea5e9; background: rgba(14,165,233,.1); }
+        .csv-dropzone .drop-icon { font-size: 40px; margin-bottom: 8px; }
+        .csv-dropzone .drop-text { font-size: 13px; color: #94a3b8; font-weight: 700; }
+        .csv-dropzone .drop-sub { font-size: 11px; color: #475569; margin-top: 4px; }
+        .csv-preview-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 12px; }
+        .csv-preview-table th { background: #0f172a; color: #94a3b8; padding: 8px 6px; text-align: left; font-weight: 700; position: sticky; top: 0; z-index: 1; white-space: nowrap; }
+        .csv-preview-table td { padding: 6px; border-bottom: 1px solid #1e293b; color: #e2e8f0; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .csv-preview-table tr:hover td { background: rgba(14,165,233,.08); }
+        .csv-preview-table tr.csv-row-error td { background: rgba(239,68,68,.1); }
+        .csv-preview-table tr.csv-row-error td:first-child::before { content: '⚠️ '; }
+        .csv-preview-wrap { max-height: 320px; overflow: auto; border-radius: 10px; border: 1px solid #334155; background: #0f172a; }
+        .csv-stats { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+        .csv-stats .csv-stat { font-size: 12px; padding: 4px 10px; border-radius: 10px; font-weight: 700; }
+        .csv-stat-ok { background: rgba(16,185,129,.15); color: #34d399; }
+        .csv-stat-err { background: rgba(239,68,68,.15); color: #f87171; }
+        .csv-stat-dup { background: rgba(245,158,11,.15); color: #fbbf24; }
+        .csv-template-link { font-size: 11px; color: #0ea5e9; cursor: pointer; text-decoration: underline; margin-top: 8px; display: inline-block; }
+
         /* 予測検索 */
         .autocomplete-wrap { position: relative; }
         .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #1e293b; border: 1.5px solid #0ea5e9; border-top: none; border-radius: 0 0 10px 10px; max-height: 180px; overflow-y: auto; z-index: 210; display: none; }
@@ -200,6 +220,7 @@
 
     <!-- ===== ルーム画面 ===== -->
     <div id="roomView" class="hidden">
+        <button class="btn btn-outline" id="backToTopBtn" style="margin-bottom:12px;">← クリニック選択へ戻る</button>
         <!-- 通知バナー -->
         <div id="notifyBanner" class="notify-banner hidden" onclick="requestNotification()">
             <div class="emoji">🔔</div>
@@ -241,7 +262,8 @@
 
 <!-- FAB（追加ボタン） -->
 <div id="fabBtn" class="hidden" style="position:fixed;bottom:70px;right:16px;z-index:99;display:flex;flex-direction:column;gap:10px;align-items:flex-end;">
-    <button class="btn" style="width:56px;height:56px;border-radius:50%;font-size:20px;padding:0;box-shadow:0 4px 16px rgba(245,158,11,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f59e0b,#d97706);" onclick="openScanInput()">🏷️</button>
+    <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:16px;padding:0;box-shadow:0 4px 16px rgba(16,185,129,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#10b981,#059669);" onclick="openCsvModal()">📄</button>
+    <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:18px;padding:0;box-shadow:0 4px 16px rgba(245,158,11,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f59e0b,#d97706);" onclick="openScanInput()">🏷️</button>
     <button class="btn btn-primary" style="width:56px;height:56px;border-radius:50%;font-size:24px;padding:0;box-shadow:0 4px 16px rgba(14,165,233,.4);display:flex;align-items:center;justify-content:center;" onclick="openAddModal()">＋</button>
 </div>
 
@@ -361,6 +383,49 @@
         <button class="btn btn-primary" id="saveEditBtn">✅ 保存する</button>
         <button class="btn btn-danger" id="deleteMedBtn">🗑 削除する</button>
         <button class="btn btn-outline" onclick="closeEditModal()">キャンセル</button>
+    </div>
+</div>
+
+<!-- CSVインポートモーダル -->
+<div class="modal-overlay" id="csvModal">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <h2>📄 CSVインポート</h2>
+        <div id="csvStep1">
+            <div class="csv-dropzone" id="csvDropzone">
+                <div class="drop-icon">📁</div>
+                <div class="drop-text">CSVファイルをドラッグ＆ドロップ</div>
+                <div class="drop-sub">または タップしてファイルを選択</div>
+                <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" style="display:none">
+            </div>
+            <div style="margin-top:12px;padding:12px;background:#0f172a;border-radius:10px;border:1px solid #334155;">
+                <div style="font-size:12px;font-weight:900;color:#94a3b8;margin-bottom:6px;">📋 CSV形式について</div>
+                <div style="font-size:11px;color:#64748b;line-height:1.7;">
+                    1行目はヘッダー行（自動判定）<br>
+                    <b style="color:#e2e8f0;">必須列:</b> 薬剤名, 消費期限<br>
+                    <b style="color:#e2e8f0;">任意列:</b> 数量, 単位, 保管場所, カテゴリ, メモ<br>
+                    日付形式: 2026-04-01 / 2026/04/01 / 20260401 に対応
+                </div>
+                <span class="csv-template-link" id="csvDownloadTemplate">📥 テンプレートCSVをダウンロード</span>
+            </div>
+            <button class="btn btn-outline" onclick="closeCsvModal()">キャンセル</button>
+        </div>
+        <div id="csvStep2" class="hidden">
+            <div class="csv-stats" id="csvStats"></div>
+            <div class="csv-preview-wrap">
+                <table class="csv-preview-table" id="csvPreviewTable"></table>
+            </div>
+            <div id="csvErrors" style="margin-top:8px;"></div>
+            <button class="btn btn-success" id="csvImportBtn">✅ インポート実行</button>
+            <button class="btn btn-outline" id="csvBackBtn">← ファイルを変更</button>
+            <button class="btn btn-outline" onclick="closeCsvModal()">キャンセル</button>
+        </div>
+        <div id="csvStep3" class="hidden" style="text-align:center;padding:20px 0;">
+            <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+            <div id="csvResultMsg" style="font-size:15px;font-weight:900;color:#34d399;margin-bottom:8px;"></div>
+            <div id="csvResultErrors" style="font-size:12px;color:#f87171;margin-bottom:12px;"></div>
+            <button class="btn btn-primary" onclick="closeCsvModal(); loadRoom();">閉じる</button>
+        </div>
     </div>
 </div>
 
@@ -504,7 +569,17 @@
     }
 
     // === ルーム作成 ===
-    document.getElementById('createRoomBtn').addEventListener('click', function() {
+    document.getElementById('backToTopBtn').addEventListener('click', function() {
+        // ルームビューを隠し、トップビューを表示
+        roomView.classList.add('hidden');
+        topView.classList.remove('hidden');
+        fabBtn.classList.add('hidden');
+        // ローカルストレージの部屋情報をクリア
+        delete window.roomId;
+        delete window.roomData;
+      });
+
+      document.getElementById('createRoomBtn').addEventListener('click', function() {
         var name = document.getElementById('roomName').value.trim() || '薬剤管理';
         apiCall('POST', '/api/create', { name: name }, function(status, data) {
             if (status === 200 && data) {
@@ -1317,6 +1392,303 @@
         else document.getElementById('addModal').classList.add('show');
         renderFavList();
     };
+
+    // === CSVインポート機能 ===
+    var csvParsedData = []; // パース済みデータ
+
+    window.openCsvModal = function() {
+        document.getElementById('csvModal').classList.add('show');
+        document.getElementById('csvStep1').classList.remove('hidden');
+        document.getElementById('csvStep2').classList.add('hidden');
+        document.getElementById('csvStep3').classList.add('hidden');
+        document.getElementById('csvFileInput').value = '';
+        csvParsedData = [];
+    };
+    window.closeCsvModal = function() {
+        document.getElementById('csvModal').classList.remove('show');
+    };
+    // モーダル背景クリックで閉じる
+    document.getElementById('csvModal').addEventListener('click', function(e) {
+        if (e.target === this) closeCsvModal();
+    });
+
+    // ドロップゾーン
+    var dropzone = document.getElementById('csvDropzone');
+    var csvFileInput = document.getElementById('csvFileInput');
+
+    dropzone.addEventListener('click', function() { csvFileInput.click(); });
+    dropzone.addEventListener('dragover', function(e) { e.preventDefault(); dropzone.classList.add('drag-over'); });
+    dropzone.addEventListener('dragleave', function() { dropzone.classList.remove('drag-over'); });
+    dropzone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('drag-over');
+        var files = e.dataTransfer.files;
+        if (files.length > 0) handleCsvFile(files[0]);
+    });
+    csvFileInput.addEventListener('change', function() {
+        if (this.files.length > 0) handleCsvFile(this.files[0]);
+    });
+
+    // テンプレートCSVダウンロード
+    document.getElementById('csvDownloadTemplate').addEventListener('click', function() {
+        var bom = '\uFEFF';
+        var csv = bom + '薬剤名,数量,単位,消費期限,保管場所,カテゴリ,メモ\n';
+        csv += 'ロキソニン錠60mg,10,箱,2027-03-15,棚A-1,内服薬,\n';
+        csv += 'カロナール錠500,5,箱,2026-12-01,棚A-2,内服薬,備考メモ\n';
+        csv += 'ヒルドイドソフト軟膏,3,本,2027-06-30,冷蔵庫,外用薬,\n';
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = '薬剤インポートテンプレート.csv'; a.click();
+        URL.revokeObjectURL(url);
+        showToast('📥 テンプレートをダウンロードしました');
+    });
+
+    // CSVファイル読み込み
+    function handleCsvFile(file) {
+        if (file.size > 1024 * 1024) { alert('ファイルサイズは1MB以下にしてください'); return; }
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var text = e.target.result;
+            parseCsvAndPreview(text);
+        };
+        reader.readAsText(file, 'UTF-8');
+    }
+
+    // CSVパース
+    function parseCsvText(text) {
+        var lines = text.split(/\r?\n/);
+        var result = [];
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (!line) continue;
+            // ダブルクォート対応のCSVパース
+            var row = [];
+            var inQuote = false;
+            var field = '';
+            for (var j = 0; j < line.length; j++) {
+                var ch = line[j];
+                if (inQuote) {
+                    if (ch === '"' && j + 1 < line.length && line[j+1] === '"') {
+                        field += '"'; j++;
+                    } else if (ch === '"') {
+                        inQuote = false;
+                    } else {
+                        field += ch;
+                    }
+                } else {
+                    if (ch === '"') {
+                        inQuote = true;
+                    } else if (ch === ',' || ch === '\t') {
+                        row.push(field.trim()); field = '';
+                    } else {
+                        field += ch;
+                    }
+                }
+            }
+            row.push(field.trim());
+            result.push(row);
+        }
+        return result;
+    }
+
+    // ヘッダー列マッピング
+    var headerMap = {
+        '薬剤名': 'name', '薬品名': 'name', '名前': 'name', '品名': 'name', 'name': 'name', '医薬品名': 'name',
+        '数量': 'quantity', '個数': 'quantity', 'quantity': 'quantity', 'qty': 'quantity',
+        '単位': 'unit', 'unit': 'unit',
+        '消費期限': 'expiryDate', '期限': 'expiryDate', '有効期限': 'expiryDate', '使用期限': 'expiryDate', 'expiry': 'expiryDate', 'expiry_date': 'expiryDate',
+        '保管場所': 'location', '場所': 'location', '置き場': 'location', 'location': 'location',
+        'カテゴリ': 'category', '分類': 'category', '種別': 'category', 'category': 'category',
+        'メモ': 'memo', '備考': 'memo', 'memo': 'memo', 'note': 'memo', 'notes': 'memo',
+    };
+
+    // 日付フォーマット正規化
+    function normalizeDate(val) {
+        if (!val) return '';
+        val = val.replace(/[年月]/g, '-').replace(/日/g, '').trim();
+        // YYYY/MM/DD → YYYY-MM-DD
+        var m = val.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
+        if (m) return m[1] + '-' + ('0'+m[2]).slice(-2) + '-' + ('0'+m[3]).slice(-2);
+        // YYYYMMDD
+        m = val.match(/^(\d{4})(\d{2})(\d{2})$/);
+        if (m) return m[1] + '-' + m[2] + '-' + m[3];
+        // MM/DD/YYYY
+        m = val.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if (m) return m[3] + '-' + ('0'+m[1]).slice(-2) + '-' + ('0'+m[2]).slice(-2);
+        return val;
+    }
+
+    // ヘッダー行か判定
+    function isHeaderRow(row) {
+        var hits = 0;
+        for (var i = 0; i < row.length; i++) {
+            var lowered = row[i].toLowerCase().replace(/[\s_]/g, '');
+            if (headerMap[lowered] || headerMap[row[i]]) hits++;
+        }
+        return hits >= 2;
+    }
+
+    // CSVパース→プレビュー表示
+    function parseCsvAndPreview(text) {
+        var rows = parseCsvText(text);
+        if (rows.length === 0) { alert('データが見つかりません'); return; }
+
+        // ヘッダー検出
+        var colMap = {}; // インデックス → フィールド名
+        var dataStartIdx = 0;
+
+        if (isHeaderRow(rows[0])) {
+            dataStartIdx = 1;
+            for (var i = 0; i < rows[0].length; i++) {
+                var key = rows[0][i].toLowerCase().replace(/[\s_]/g, '');
+                var mapped = headerMap[key] || headerMap[rows[0][i]];
+                if (mapped) colMap[i] = mapped;
+            }
+        } else {
+            // ヘッダーなし: デフォルト列順
+            var defaultOrder = ['name', 'quantity', 'unit', 'expiryDate', 'location', 'category', 'memo'];
+            for (var i = 0; i < Math.min(rows[0].length, defaultOrder.length); i++) {
+                colMap[i] = defaultOrder[i];
+            }
+        }
+
+        // データ行をパース
+        csvParsedData = [];
+        for (var ri = dataStartIdx; ri < rows.length; ri++) {
+            var row = rows[ri];
+            if (row.length === 1 && !row[0]) continue; // 空行スキップ
+            var item = { name: '', quantity: 1, unit: '個', expiryDate: '', location: '', category: '', memo: '', _valid: true, _errors: [] };
+            for (var ci = 0; ci < row.length; ci++) {
+                var field = colMap[ci];
+                if (!field) continue;
+                var val = row[ci];
+                if (field === 'quantity') {
+                    item.quantity = parseInt(val) || 1;
+                } else if (field === 'expiryDate') {
+                    item.expiryDate = normalizeDate(val);
+                } else {
+                    item[field] = val;
+                }
+            }
+            // バリデーション
+            if (!item.name) { item._valid = false; item._errors.push('薬剤名なし'); }
+            if (!item.expiryDate) { item._valid = false; item._errors.push('期限なし'); }
+            else if (!/^\d{4}-\d{2}-\d{2}$/.test(item.expiryDate)) { item._valid = false; item._errors.push('日付不正'); }
+            csvParsedData.push(item);
+        }
+
+        if (csvParsedData.length === 0) { alert('有効なデータ行がありません'); return; }
+
+        // プレビュー描画
+        renderCsvPreview();
+        document.getElementById('csvStep1').classList.add('hidden');
+        document.getElementById('csvStep2').classList.remove('hidden');
+    }
+
+    // プレビュー描画
+    function renderCsvPreview() {
+        var table = document.getElementById('csvPreviewTable');
+        var validCount = 0, errorCount = 0;
+        for (var i = 0; i < csvParsedData.length; i++) {
+            if (csvParsedData[i]._valid) validCount++; else errorCount++;
+        }
+
+        // 統計バー
+        var stats = document.getElementById('csvStats');
+        stats.innerHTML = '<span class="csv-stat csv-stat-ok">✅ 有効: ' + validCount + '件</span>';
+        if (errorCount > 0) stats.innerHTML += '<span class="csv-stat csv-stat-err">⚠️ エラー: ' + errorCount + '件</span>';
+        stats.innerHTML += '<span class="csv-stat" style="background:rgba(148,163,184,.1);color:#94a3b8;">合計: ' + csvParsedData.length + '件</span>';
+
+        // テーブル
+        var html = '<thead><tr><th>#</th><th>薬剤名</th><th>数量</th><th>単位</th><th>消費期限</th><th>場所</th><th>カテゴリ</th></tr></thead><tbody>';
+        for (var i = 0; i < csvParsedData.length; i++) {
+            var d = csvParsedData[i];
+            var cls = d._valid ? '' : ' class="csv-row-error"';
+            html += '<tr' + cls + '>';
+            html += '<td>' + (i+1) + '</td>';
+            html += '<td title="' + escHtml(d.name) + '">' + escHtml(d.name || '—') + '</td>';
+            html += '<td>' + d.quantity + '</td>';
+            html += '<td>' + escHtml(d.unit) + '</td>';
+            html += '<td>' + escHtml(d.expiryDate || '—') + '</td>';
+            html += '<td>' + escHtml(d.location) + '</td>';
+            html += '<td>' + escHtml(d.category) + '</td>';
+            html += '</tr>';
+        }
+        html += '</tbody>';
+        table.innerHTML = html;
+
+        // エラー詳細
+        var errDiv = document.getElementById('csvErrors');
+        if (errorCount > 0) {
+            var errHtml = '<div style="font-size:11px;color:#f87171;line-height:1.6">';
+            for (var i = 0; i < csvParsedData.length; i++) {
+                if (!csvParsedData[i]._valid) {
+                    errHtml += '行' + (i+1) + ': ' + csvParsedData[i]._errors.join(', ') + '<br>';
+                }
+            }
+            errHtml += '</div>';
+            errDiv.innerHTML = errHtml;
+        } else {
+            errDiv.innerHTML = '';
+        }
+
+        // インポートボタンの有効/無効
+        document.getElementById('csvImportBtn').disabled = validCount === 0;
+        if (validCount === 0) {
+            document.getElementById('csvImportBtn').style.opacity = '0.4';
+        } else {
+            document.getElementById('csvImportBtn').style.opacity = '1';
+        }
+    }
+
+    function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // ファイル変更ボタン
+    document.getElementById('csvBackBtn').addEventListener('click', function() {
+        document.getElementById('csvStep1').classList.remove('hidden');
+        document.getElementById('csvStep2').classList.add('hidden');
+        document.getElementById('csvFileInput').value = '';
+        csvParsedData = [];
+    });
+
+    // インポート実行
+    document.getElementById('csvImportBtn').addEventListener('click', function() {
+        var validItems = csvParsedData.filter(function(d) { return d._valid; });
+        if (validItems.length === 0) { alert('有効なデータがありません'); return; }
+        if (!confirm(validItems.length + '件をインポートしますか？')) return;
+
+        var btn = document.getElementById('csvImportBtn');
+        btn.disabled = true;
+        btn.textContent = '⏳ インポート中...';
+
+        // _valid, _errors を除外
+        var items = validItems.map(function(d) {
+            return { name: d.name, quantity: d.quantity, unit: d.unit, expiryDate: d.expiryDate, location: d.location, category: d.category, memo: d.memo };
+        });
+
+        apiCall('POST', '/api/room/' + roomId + '/bulk-add', { items: items, addedBy: myName }, function(status, data) {
+            btn.disabled = false;
+            btn.textContent = '✅ インポート実行';
+            if (status === 200 && data) {
+                document.getElementById('csvStep2').classList.add('hidden');
+                document.getElementById('csvStep3').classList.remove('hidden');
+                document.getElementById('csvResultMsg').textContent = '🎉 ' + data.added + '件のインポートが完了しました！';
+                if (data.errors && data.errors.length > 0) {
+                    var errHtml = '⚠️ ' + data.errors.length + '件のエラー:<br>';
+                    for (var i = 0; i < data.errors.length; i++) {
+                        errHtml += '行' + data.errors[i].row + ': ' + data.errors[i].error + '<br>';
+                    }
+                    document.getElementById('csvResultErrors').innerHTML = errHtml;
+                } else {
+                    document.getElementById('csvResultErrors').innerHTML = '';
+                }
+                showToast('📄 CSVインポート完了！');
+            } else {
+                alert('インポートに失敗しました: ' + (data ? data.error : '通信エラー'));
+            }
+        });
+    });
 
     init();
 })();
