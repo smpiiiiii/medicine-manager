@@ -252,6 +252,7 @@
 <!-- FAB（追加ボタン） -->
 <div id="fabBtn" style="position:fixed;bottom:70px;right:16px;z-index:99;flex-direction:column;gap:10px;align-items:flex-end;">
     <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:16px;padding:0;box-shadow:0 4px 16px rgba(16,185,129,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#10b981,#059669);" onclick="openCsvModal()">📄</button>
+    <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:16px;padding:0;box-shadow:0 4px 16px rgba(139,92,246,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#8b5cf6,#7c3aed);" onclick="exportCsv()">📥</button>
     <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:18px;padding:0;box-shadow:0 4px 16px rgba(245,158,11,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f59e0b,#d97706);" onclick="openScanInput()">🏷️</button>
     <button class="btn btn-primary" style="width:56px;height:56px;border-radius:50%;font-size:24px;padding:0;box-shadow:0 4px 16px rgba(14,165,233,.4);display:flex;align-items:center;justify-content:center;" onclick="openAddModal()">＋</button>
 </div>
@@ -531,6 +532,10 @@
             localStorage.setItem('med_last_room', '/room/' + id);
         } catch(e) {}
     }
+    function removeFromHistory(id) {
+        var history = getHistory().filter(function(h) { return h.id !== id; });
+        try { localStorage.setItem('med_history', JSON.stringify(history)); } catch(e) {}
+    }
     function renderHistory() {
         var history = getHistory();
         var section = document.getElementById('historySection');
@@ -539,10 +544,13 @@
         section.classList.remove('hidden');
         list.innerHTML = '';
         for (var i = 0; i < history.length; i++) {
-            (function(h) {
+            (function(h, idx) {
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+
                 var card = document.createElement('a');
                 card.href = '/room/' + h.id;
-                card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,#0f172a,#1a2332);border-radius:12px;margin-bottom:8px;text-decoration:none;color:#e2e8f0;border:1px solid #334155;transition:all .2s;';
+                card.style.cssText = 'flex:1;display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,#0f172a,#1a2332);border-radius:12px;text-decoration:none;color:#e2e8f0;border:1px solid #334155;transition:all .2s;min-width:0;';
                 card.onmouseenter = function() { this.style.borderColor = '#0ea5e9'; this.style.transform = 'translateY(-1px)'; };
                 card.onmouseleave = function() { this.style.borderColor = '#334155'; this.style.transform = 'none'; };
 
@@ -568,8 +576,28 @@
                 card.appendChild(icon);
                 card.appendChild(info);
                 card.appendChild(arrow);
-                list.appendChild(card);
-            })(history[i]);
+
+                // 削除ボタン
+                var delBtn = document.createElement('button');
+                delBtn.style.cssText = 'width:36px;height:36px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#f87171;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;';
+                delBtn.textContent = '\ud83d\uddd1\ufe0f';
+                delBtn.title = '\u524a\u9664';
+                delBtn.onmouseenter = function() { this.style.background = '#7f1d1d'; this.style.borderColor = '#f87171'; };
+                delBtn.onmouseleave = function() { this.style.background = '#1e293b'; this.style.borderColor = '#334155'; };
+                delBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (confirm('"' + h.name + '" \u3092\u30ea\u30b9\u30c8\u304b\u3089\u524a\u9664\u3057\u307e\u3059\u304b\uff1f')) {
+                        removeFromHistory(h.id);
+                        renderHistory();
+                        showToast('\ud83d\uddd1\ufe0f \u524a\u9664\u3057\u307e\u3057\u305f');
+                    }
+                });
+
+                row.appendChild(card);
+                row.appendChild(delBtn);
+                list.appendChild(row);
+            })(history[i], i);
         }
     }
 
@@ -598,14 +626,14 @@
 
     // === ルーム作成 ===
     document.getElementById('backToTopBtn').addEventListener('click', function() {
-        // ルームビューを隠し、トップビューを表示
         roomView.classList.add('hidden');
         topView.classList.remove('hidden');
         fabBtn.classList.remove('fab-show');
-        // ローカルストレージの部屋情報をクリア
-        delete window.roomId;
-        delete window.roomData;
-      });
+        if (autoReloadTimer) clearInterval(autoReloadTimer);
+        roomId = null;
+        roomData = null;
+        renderHistory();
+    });
 
       document.getElementById('createRoomBtn').addEventListener('click', function() {
         var name = document.getElementById('roomName').value.trim() || '薬剤管理';
@@ -1421,6 +1449,44 @@
         if (origOpenAdd) origOpenAdd();
         else document.getElementById('addModal').classList.add('show');
         renderFavList();
+    };
+
+    // === CSVエクスポート機能 ===
+    window.exportCsv = function() {
+        if (!roomData || !roomData.medicines || roomData.medicines.length === 0) {
+            alert('エクスポートする薬剤データがありません');
+            return;
+        }
+        var bom = '\uFEFF';
+        var csv = bom + '薬剤名,数量,単位,消費期限,保管場所,カテゴリ,メモ\n';
+        for (var i = 0; i < roomData.medicines.length; i++) {
+            var m = roomData.medicines[i];
+            // カンマやダブルクォートを含む値をエスケープ
+            var fields = [
+                m.name || '',
+                m.quantity || '',
+                m.unit || '',
+                m.expiryDate || '',
+                m.location || '',
+                m.category || '',
+                m.memo || ''
+            ];
+            csv += fields.map(function(f) {
+                var s = String(f);
+                if (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) {
+                    return '"' + s.replace(/"/g, '""') + '"';
+                }
+                return s;
+            }).join(',') + '\n';
+        }
+        // ダウンロード
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        var fileName = (roomData.name || '薬剤一覧') + '_' + new Date().toISOString().slice(0,10) + '.csv';
+        a.href = url; a.download = fileName; a.click();
+        URL.revokeObjectURL(url);
+        showToast('📥 ' + roomData.medicines.length + '件のデータをエクスポートしました');
     };
 
     // === CSVインポート機能 ===
