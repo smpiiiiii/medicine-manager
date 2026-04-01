@@ -177,23 +177,6 @@
     </style>
 </head>
 <body>
-<script>
-// PWAホーム画面から開いた時に最後のルームへ自動リダイレクト
-// トークンが存在する場合のみリダイレクト（無限ループ防止）
-(function() {
-    if (location.pathname === '/' || location.pathname === '') {
-        try {
-            var token = localStorage.getItem('med_auth_token');
-            var lastRoom = localStorage.getItem('med_last_room');
-            if (token && lastRoom && lastRoom.indexOf('/room/') === 0) {
-                window.stop();
-                location.replace(lastRoom);
-                return;
-            }
-        } catch(e) {}
-    }
-})();
-</script>
 
 <!-- ログイン画面 -->
 <div class="login-overlay" id="loginOverlay" style="display:none">
@@ -218,25 +201,28 @@
 </div>
 
 <div class="content">
-    <!-- ===== トップ画面（ルーム未参加時） ===== -->
+    <!-- ===== ホーム画面（クリニック選択） ===== -->
     <div id="topView">
-        <div class="card">
-            <h3>📋 新しい管理ルームを作成</h3>
-            <label>職場名・ルーム名</label>
+        <!-- クリニック一覧 -->
+        <div id="historySection" class="card hidden">
+            <h3>🏥 クリニックを選択</h3>
+            <div id="historyList"></div>
+        </div>
+
+        <!-- 新規作成 -->
+        <div class="card" style="border:1px dashed #334155;">
+            <h3>➕ 新しいクリニックを登録</h3>
+            <label>クリニック名・薬局名</label>
             <input type="text" id="roomName" placeholder="例: ○○薬局 / △△クリニック">
             <button class="btn btn-primary" id="createRoomBtn">✅ 作成する</button>
         </div>
 
+        <!-- 共有参加 -->
         <div class="card">
-            <h3>🔗 既存のルームに参加</h3>
+            <h3>🔗 共有URLで参加</h3>
             <div style="font-size:12px;color:#64748b;line-height:1.6;">
                 管理者から共有されたURLにアクセスしてください。
             </div>
-        </div>
-
-        <div id="historySection" class="card hidden">
-            <h3>📊 最近のルーム</h3>
-            <div id="historyList"></div>
         </div>
     </div>
 
@@ -625,12 +611,37 @@
         section.classList.remove('hidden');
         list.innerHTML = '';
         for (var i = 0; i < history.length; i++) {
-            var h = history[i];
-            var a = document.createElement('a');
-            a.href = '/room/' + h.id;
-            a.style.cssText = 'display:block;padding:10px;background:#0f172a;border-radius:10px;margin-bottom:6px;text-decoration:none;color:#e2e8f0;font-size:13px;font-weight:700;';
-            a.textContent = '💊 ' + h.name;
-            list.appendChild(a);
+            (function(h) {
+                var card = document.createElement('a');
+                card.href = '/room/' + h.id;
+                card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,#0f172a,#1a2332);border-radius:12px;margin-bottom:8px;text-decoration:none;color:#e2e8f0;border:1px solid #334155;transition:all .2s;';
+                card.onmouseenter = function() { this.style.borderColor = '#0ea5e9'; this.style.transform = 'translateY(-1px)'; };
+                card.onmouseleave = function() { this.style.borderColor = '#334155'; this.style.transform = 'none'; };
+
+                var icon = document.createElement('div');
+                icon.style.cssText = 'width:44px;height:44px;background:linear-gradient(135deg,#0ea5e9,#0284c7);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;';
+                icon.textContent = '\ud83c\udfe5';
+
+                var info = document.createElement('div');
+                info.style.cssText = 'flex:1;min-width:0;';
+                var name = document.createElement('div');
+                name.style.cssText = 'font-size:14px;font-weight:900;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                name.textContent = h.name;
+                var sub = document.createElement('div');
+                sub.style.cssText = 'font-size:11px;color:#64748b;margin-top:2px;';
+                sub.textContent = '\u30bf\u30c3\u30d7\u3057\u3066\u958b\u304f';
+                info.appendChild(name);
+                info.appendChild(sub);
+
+                var arrow = document.createElement('div');
+                arrow.style.cssText = 'color:#475569;font-size:16px;flex-shrink:0;';
+                arrow.textContent = '\u203a';
+
+                card.appendChild(icon);
+                card.appendChild(info);
+                card.appendChild(arrow);
+                list.appendChild(card);
+            })(history[i]);
         }
     }
 
