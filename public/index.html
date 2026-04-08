@@ -999,6 +999,21 @@
             var qtyVal = document.createElement('span');
             qtyVal.className = 'qty-val';
             qtyVal.textContent = med.quantity + (med.unit || '個');
+            qtyVal.style.cursor = 'pointer';
+            qtyVal.style.textDecoration = 'underline';
+            qtyVal.style.textDecorationStyle = 'dotted';
+            // タップで数量直接入力
+            (function(m) {
+                qtyVal.addEventListener('click', function() {
+                    var newVal = prompt(m.name + ' の数量を入力', m.quantity);
+                    if (newVal === null) return;
+                    var num = parseInt(newVal);
+                    if (isNaN(num) || num < 0) { alert('正しい数値を入力してください'); return; }
+                    var diff = num - m.quantity;
+                    if (diff === 0) return;
+                    adjustQty(m.mid, diff);
+                });
+            })(med);
             var plusBtn = document.createElement('button');
             plusBtn.className = 'qty-btn';
             plusBtn.textContent = '＋';
