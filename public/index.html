@@ -1573,12 +1573,21 @@
         parseCsvAndPreview(text);
     });
 
-    // CSVファイル読み込み
+    // CSVファイル読み込み（Shift_JIS自動判定対応）
     function handleCsvFile(file) {
         if (file.size > 1024 * 1024) { alert('ファイルサイズは1MB以下にしてください'); return; }
         var reader = new FileReader();
         reader.onload = function(e) {
             var text = e.target.result;
+            // 文字化け検出: 「�」が含まれる場合はShift_JISで再読み込み
+            if (text.indexOf('\ufffd') >= 0 || /[\x80-\x9f]/.test(text)) {
+                var reader2 = new FileReader();
+                reader2.onload = function(e2) {
+                    parseCsvAndPreview(e2.target.result);
+                };
+                reader2.readAsText(file, 'Shift_JIS');
+                return;
+            }
             parseCsvAndPreview(text);
         };
         reader.readAsText(file, 'UTF-8');
@@ -1621,15 +1630,24 @@
         return result;
     }
 
-    // ヘッダー列マッピング
+    // ヘッダー列マッピング（水戸ホームクリニック形式にも対応）
     var headerMap = {
         '薬剤名': 'name', '薬品名': 'name', '名前': 'name', '品名': 'name', 'name': 'name', '医薬品名': 'name',
+        '商品名': 'name',
         '数量': 'quantity', '個数': 'quantity', 'quantity': 'quantity', 'qty': 'quantity',
+        '定数': 'quantity',
         '単位': 'unit', 'unit': 'unit',
         '消費期限': 'expiryDate', '期限': 'expiryDate', '有効期限': 'expiryDate', '使用期限': 'expiryDate', 'expiry': 'expiryDate', 'expiry_date': 'expiryDate',
         '保管場所': 'location', '場所': 'location', '置き場': 'location', 'location': 'location',
+        '大分類': 'location',
         'カテゴリ': 'category', '分類': 'category', '種別': 'category', 'category': 'category',
+        '中分類': 'category',
         'メモ': 'memo', '備考': 'memo', 'memo': 'memo', 'note': 'memo', 'notes': 'memo',
+        // 水戸ホームクリニック追加フィールド
+        'janコード': 'janCode', 'jan': 'janCode', 'JANコード': 'janCode',
+        '規格・容量': 'spec', '規格': 'spec', '容量': 'spec',
+        'メーカー名': 'maker', 'メーカー': 'maker', '製造元': 'maker',
+        '半分以下で発注': '_ignore', '発注数': '_ignore',
     };
 
     // 日付フォーマット正規化
@@ -1687,23 +1705,44 @@
         for (var ri = dataStartIdx; ri < rows.length; ri++) {
             var row = rows[ri];
             if (row.length === 1 && !row[0]) continue; // 空行スキップ
-            var item = { name: '', quantity: 1, unit: '個', expiryDate: '', location: '', category: '', memo: '', _valid: true, _errors: [] };
+            var item = { name: '', quantity: 1, unit: '個', expiryDate: '', location: '', category: '', memo: '', _valid: true, _errors: [], _janCode: '', _spec: '', _maker: '' };
             for (var ci = 0; ci < row.length; ci++) {
                 var field = colMap[ci];
-                if (!field) continue;
+                if (!field || field === '_ignore') continue;
                 var val = row[ci];
                 if (field === 'quantity') {
                     item.quantity = parseInt(val) || 1;
                 } else if (field === 'expiryDate') {
                     item.expiryDate = normalizeDate(val);
+                } else if (field === 'janCode') {
+                    item._janCode = val;
+                } else if (field === 'spec') {
+                    item._spec = val;
+                } else if (field === 'maker') {
+                    item._maker = val;
                 } else {
                     item[field] = val;
                 }
             }
+            // 水戸ホームクリニック形式の後処理: 規格を商品名に結合、JAN/メーカーをメモに
+            if (item._spec && item._spec.trim()) {
+                item.name = item.name + ' ' + item._spec.trim();
+            }
+            var memoExtra = [];
+            if (item._janCode) memoExtra.push('JAN:' + item._janCode);
+            if (item._maker) memoExtra.push('メーカー:' + item._maker);
+            if (memoExtra.length > 0) {
+                item.memo = item.memo ? item.memo + ' / ' + memoExtra.join(' / ') : memoExtra.join(' / ');
+            }
             // バリデーション
             if (!item.name) { item._valid = false; item._errors.push('薬剤名なし'); }
-            if (!item.expiryDate) { item._valid = false; item._errors.push('期限なし'); }
-            else if (!/^\d{4}-\d{2}-\d{2}$/.test(item.expiryDate)) { item._valid = false; item._errors.push('日付不正'); }
+            // 消費期限は必須ではない（物品定数CSVなど期限なしのデータもOK）
+            if (item.expiryDate && !/^\d{4}-\d{2}-\d{2}$/.test(item.expiryDate)) {
+                item._valid = false; item._errors.push('日付不正');
+            }
+            if (!item.expiryDate) {
+                item._errors.push('※期限なし');
+            }
             csvParsedData.push(item);
         }
 

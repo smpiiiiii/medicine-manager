@@ -101,7 +101,6 @@ module.exports = async (req, res) => {
       };
 
       if (!medicine.name) return res.status(400).json({ error: '薬剤名は必須です' });
-      if (!medicine.expiryDate) return res.status(400).json({ error: '消費期限は必須です' });
 
       room.medicines.push(medicine);
       await saveRoom(id, room);
@@ -225,7 +224,6 @@ module.exports = async (req, res) => {
         const name = (item.name || '').trim();
         const expiryDate = (item.expiryDate || '').trim();
         if (!name) { errors.push({ row: i + 1, error: '薬剤名が空です' }); continue; }
-        if (!expiryDate) { errors.push({ row: i + 1, error: '消費期限が空です', name }); continue; }
 
         const medicine = {
           mid: crypto.randomBytes(4).toString('hex'),
