@@ -202,7 +202,7 @@
         <div class="card">
             <h3>🔗 共有URLで参加</h3>
             <div style="font-size:12px;color:#64748b;line-height:1.6;">
-                管理者から共有されたURLにアクセスしてください。
+                仲間から共有されたURLにアクセスしてください。
             </div>
         </div>
     </div>
@@ -213,6 +213,14 @@
         <!-- 担当者名バッジ -->
         <div style="text-align:right;margin-bottom:8px;">
             <span id="myNameLabel" onclick="changeMyName()" style="display:inline-block;cursor:pointer;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;background:rgba(14,165,233,.15);color:#38bdf8;border:1px solid rgba(14,165,233,.3)">👤 担当者未設定</span>
+        </div>
+        <!-- 参加スタッフ一覧 -->
+        <div id="staffSection" class="card hidden" style="margin-bottom:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" id="staffToggleBtn">
+                <h3 style="margin:0">👥 参加スタッフ</h3>
+                <span id="staffToggleIcon" style="font-size:14px;color:#64748b;transition:transform .2s">▼</span>
+            </div>
+            <div id="staffList" style="margin-top:8px;"></div>
         </div>
         <!-- 通知バナー -->
         <div id="notifyBanner" class="notify-banner hidden" onclick="requestNotification()">
@@ -623,27 +631,23 @@
                 card.appendChild(info);
                 card.appendChild(arrow);
 
-                // 削除ボタン（作成者のみ表示）
-                var isAdmin = false;
-                try { isAdmin = !!localStorage.getItem('med_admin_' + h.id); } catch(e) {}
-                if (isAdmin) {
-                    var delBtn = document.createElement('button');
-                    delBtn.style.cssText = 'width:36px;height:36px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#f87171;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;';
-                    delBtn.textContent = '\ud83d\uddd1\ufe0f';
-                    delBtn.title = '\u524a\u9664';
-                    delBtn.onmouseenter = function() { this.style.background = '#7f1d1d'; this.style.borderColor = '#f87171'; };
-                    delBtn.onmouseleave = function() { this.style.background = '#1e293b'; this.style.borderColor = '#334155'; };
-                    delBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (confirm('"' + h.name + '" \u3092\u30ea\u30b9\u30c8\u304b\u3089\u524a\u9664\u3057\u307e\u3059\u304b\uff1f')) {
-                            removeFromHistory(h.id);
-                            renderHistory();
-                            showToast('\ud83d\uddd1\ufe0f \u524a\u9664\u3057\u307e\u3057\u305f');
-                        }
-                    });
-                    row.appendChild(delBtn);
-                }
+                // 削除ボタン（全ユーザーに開放）
+                var delBtn = document.createElement('button');
+                delBtn.style.cssText = 'width:36px;height:36px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#f87171;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;';
+                delBtn.textContent = '\ud83d\uddd1\ufe0f';
+                delBtn.title = '\u524a\u9664';
+                delBtn.onmouseenter = function() { this.style.background = '#7f1d1d'; this.style.borderColor = '#f87171'; };
+                delBtn.onmouseleave = function() { this.style.background = '#1e293b'; this.style.borderColor = '#334155'; };
+                delBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (confirm('"' + h.name + '" \u3092\u30ea\u30b9\u30c8\u304b\u3089\u524a\u9664\u3057\u307e\u3059\u304b\uff1f')) {
+                        removeFromHistory(h.id);
+                        renderHistory();
+                        showToast('\ud83d\uddd1\ufe0f \u524a\u9664\u3057\u307e\u3057\u305f');
+                    }
+                });
+                row.appendChild(delBtn);
 
                 row.appendChild(card);
                 list.appendChild(row);
@@ -690,7 +694,6 @@
         apiCall('POST', '/api/create', { name: name }, function(status, data) {
             if (status === 200 && data) {
                 addToHistory(data.id, name);
-                try { localStorage.setItem('med_admin_' + data.id, data.adminToken); } catch(e) {}
                 location.href = '/room/' + data.id;
             } else {
                 alert('作成に失敗しました');
@@ -703,7 +706,7 @@
         roomView.classList.remove('hidden');
         fabBtn.classList.add('fab-show');
 
-        apiCall('GET', '/api/room/' + roomId, null, function(status, data) {
+        apiCall('GET', '/api/room/' + roomId + '?user=' + encodeURIComponent(myName), null, function(status, data) {
             if (status !== 200 || !data) {
                 alert('ルームが見つかりません');
                 try { localStorage.removeItem('med_last_room'); } catch(e) {}
@@ -714,6 +717,7 @@
             addToHistory(data.id, data.name);
             document.getElementById('headerTitle').textContent = '💊 ' + data.name;
             renderMedicines();
+            renderStaffList();
             checkNotificationPermission();
             startAutoReload();
         });
@@ -722,10 +726,11 @@
     // === ページリロードなしでデータを更新 ===
     window.refreshRoomData = function() {
         if (!roomId) return;
-        apiCall('GET', '/api/room/' + roomId, null, function(status, data) {
+        apiCall('GET', '/api/room/' + roomId + '?user=' + encodeURIComponent(myName), null, function(status, data) {
             if (status === 200 && data) {
                 roomData = data;
                 renderMedicines();
+                renderStaffList();
                 lastMedHash = getMedHash();
             }
         });
@@ -745,7 +750,7 @@
         lastMedHash = getMedHash();
         autoReloadTimer = setInterval(function() {
             if (!roomId) return;
-            apiCall('GET', '/api/room/' + roomId, null, function(status, data) {
+            apiCall('GET', '/api/room/' + roomId + '?user=' + encodeURIComponent(myName), null, function(status, data) {
                 if (status !== 200 || !data) return;
                 if (typeof data === 'string') data = JSON.parse(data);
                 var oldHash = lastMedHash;
@@ -754,6 +759,7 @@
                 if (newHash !== oldHash) {
                     lastMedHash = newHash;
                     renderMedicines();
+                    renderStaffList();
                     var badge = document.getElementById('reloadBadge');
                     badge.classList.add('show');
                     setTimeout(function() { badge.classList.remove('show'); }, 2000);
@@ -1973,6 +1979,82 @@
         }
         document.getElementById('logModal').classList.add('show');
     };
+
+    // === 参加スタッフ一覧描画 ===
+    function renderStaffList() {
+        var section = document.getElementById('staffSection');
+        var listEl = document.getElementById('staffList');
+        if (!section || !listEl) return;
+        var members = (roomData && roomData.members) ? roomData.members : [];
+        if (members.length === 0) {
+            section.classList.add('hidden');
+            return;
+        }
+        section.classList.remove('hidden');
+        listEl.innerHTML = '';
+        // 最終アクセス順にソート（新しい順）
+        var sorted = members.slice().sort(function(a, b) {
+            return (b.lastSeen || '').localeCompare(a.lastSeen || '');
+        });
+        for (var i = 0; i < sorted.length; i++) {
+            var m = sorted[i];
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(148,163,184,.1);';
+            // アバター（名前の頭文字）
+            var avatar = document.createElement('div');
+            var colors = ['#0ea5e9','#8b5cf6','#f59e0b','#10b981','#f43f5e','#6366f1','#ec4899','#14b8a6'];
+            var colorIdx = 0;
+            for (var ci = 0; ci < m.name.length; ci++) colorIdx += m.name.charCodeAt(ci);
+            avatar.style.cssText = 'width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;background:' + colors[colorIdx % colors.length] + ';';
+            avatar.textContent = m.name.charAt(0);
+            // 名前 & 最終活動
+            var info = document.createElement('div');
+            info.style.cssText = 'flex:1;min-width:0;';
+            var nameEl = document.createElement('div');
+            nameEl.style.cssText = 'font-size:13px;font-weight:700;color:#f1f5f9;';
+            nameEl.textContent = m.name;
+            if (m.name === myName) {
+                nameEl.textContent += ' (自分)';
+                nameEl.style.color = '#38bdf8';
+            }
+            var timeEl = document.createElement('div');
+            timeEl.style.cssText = 'font-size:10px;color:#64748b;margin-top:1px;';
+            if (m.lastSeen) {
+                var dt = new Date(m.lastSeen);
+                var now = new Date();
+                var diffMin = Math.floor((now - dt) / 60000);
+                if (diffMin < 1) timeEl.textContent = '今アクティブ';
+                else if (diffMin < 60) timeEl.textContent = diffMin + '分前';
+                else if (diffMin < 1440) timeEl.textContent = Math.floor(diffMin / 60) + '時間前';
+                else timeEl.textContent = Math.floor(diffMin / 1440) + '日前';
+            }
+            info.appendChild(nameEl);
+            info.appendChild(timeEl);
+            // オンラインインジケーター
+            var indicator = document.createElement('div');
+            var lastSeenDate = m.lastSeen ? new Date(m.lastSeen) : null;
+            var isRecent = lastSeenDate && (new Date() - lastSeenDate) < 5 * 60 * 1000; // 5分以内
+            indicator.style.cssText = 'width:8px;height:8px;border-radius:50%;flex-shrink:0;background:' + (isRecent ? '#10b981' : '#475569') + ';';
+            indicator.title = isRecent ? 'オンライン' : 'オフライン';
+            row.appendChild(avatar);
+            row.appendChild(info);
+            row.appendChild(indicator);
+            listEl.appendChild(row);
+        }
+    }
+
+    // スタッフ一覧の開閉トグル
+    var staffToggleBtn = document.getElementById('staffToggleBtn');
+    if (staffToggleBtn) {
+        var staffVisible = true;
+        staffToggleBtn.addEventListener('click', function() {
+            staffVisible = !staffVisible;
+            var list = document.getElementById('staffList');
+            var icon = document.getElementById('staffToggleIcon');
+            if (list) list.style.display = staffVisible ? 'block' : 'none';
+            if (icon) icon.style.transform = staffVisible ? 'rotate(0deg)' : 'rotate(-90deg)';
+        });
+    }
 
     // 担当者名ラベル初期化
     if (myName) {

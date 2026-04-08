@@ -39,6 +39,18 @@ async function saveRoom(id, room) {
   await redis.set(`med:${id}`, JSON.stringify(room));
 }
 
+// メンバー追跡（名前があればmembersに追加）
+function trackMember(room, name) {
+  if (!name) return;
+  if (!Array.isArray(room.members)) room.members = [];
+  const existing = room.members.find(m => m.name === name);
+  if (existing) {
+    existing.lastSeen = new Date().toISOString();
+  } else {
+    room.members.push({ name, joinedAt: new Date().toISOString(), lastSeen: new Date().toISOString() });
+  }
+}
+
 // リクエストボディ取得
 async function parseBody(req) {
   if (req.body) return req.body;
@@ -73,28 +85,32 @@ module.exports = async (req, res) => {
     if (pathname === '/api/create' && req.method === 'POST') {
       const body = await parseBody(req);
       const id = crypto.randomBytes(4).toString('hex');
-      const adminToken = crypto.randomBytes(16).toString('hex');
       const room = {
         id,
         name: body.name || '薬剤管理',
-        adminToken,
         medicines: [],
         members: [],
         pushSubscriptions: [],
         created: new Date().toISOString(),
       };
       await saveRoom(id, room);
-      return res.status(200).json({ id, adminToken });
+      return res.status(200).json({ id });
     }
 
     // === ルーム取得 ===
     if (pathname.match(/^\/api\/room\/[^/]+$/) && req.method === 'GET') {
       const id = pathname.split('/')[3];
+      const userName = url.searchParams.get('user') || '';
       let room = await getRoom(id);
       if (!room) return res.status(404).json({ error: 'Not found' });
       if (typeof room === 'string') room = JSON.parse(room);
-      // adminTokenは返さない
-      const { adminToken, pushSubscriptions, ...safeData } = room;
+      // メンバー追跡
+      if (userName) {
+        trackMember(room, userName);
+        await saveRoom(id, room);
+      }
+      // pushSubscriptionsは返さない
+      const { pushSubscriptions, ...safeData } = room;
       return res.status(200).json(safeData);
     }
 
