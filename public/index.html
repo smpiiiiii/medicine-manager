@@ -508,6 +508,12 @@
     var roomId = null;
     var roomData = null;
     var myName = localStorage.getItem('med_myName') || '';
+    // デバイスID生成（端末を一意に識別）
+    var deviceId = localStorage.getItem('med_deviceId') || '';
+    if (!deviceId) {
+        deviceId = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+        localStorage.setItem('med_deviceId', deviceId);
+    }
     // 初回アクセス時に名前を聞く
     if (!myName) {
         myName = prompt('あなたの名前を入力してください（端末に保存されます）') || '';
@@ -726,7 +732,7 @@
             myName = prompt('あなたの名前を入力してください（管理人として登録されます）') || '';
             if (myName) localStorage.setItem('med_myName', myName);
         }
-        apiCall('POST', '/api/create', { name: name, creator: myName }, function(status, data) {
+        apiCall('POST', '/api/create', { name: name, creator: myName, deviceId: deviceId }, function(status, data) {
             if (status === 200 && data) {
                 addToHistory(data.id, name);
                 location.href = '/room/' + data.id;
@@ -741,7 +747,7 @@
         roomView.classList.remove('hidden');
         fabBtn.classList.add('fab-show');
 
-        apiCall('GET', '/api/room/' + roomId + '?user=' + encodeURIComponent(myName), null, function(status, data) {
+        apiCall('GET', '/api/room/' + roomId + '?user=' + encodeURIComponent(myName) + '&deviceId=' + encodeURIComponent(deviceId), null, function(status, data) {
             if (status !== 200 || !data) {
                 alert('ルームが見つかりません');
                 try { localStorage.removeItem('med_last_room'); } catch(e) {}
@@ -761,7 +767,7 @@
     // === ページリロードなしでデータを更新 ===
     window.refreshRoomData = function() {
         if (!roomId) return;
-        apiCall('GET', '/api/room/' + roomId + '?user=' + encodeURIComponent(myName), null, function(status, data) {
+        apiCall('GET', '/api/room/' + roomId + '?user=' + encodeURIComponent(myName) + '&deviceId=' + encodeURIComponent(deviceId), null, function(status, data) {
             if (status === 200 && data) {
                 roomData = data;
                 renderMedicines();
@@ -785,7 +791,7 @@
         lastMedHash = getMedHash();
         autoReloadTimer = setInterval(function() {
             if (!roomId) return;
-            apiCall('GET', '/api/room/' + roomId + '?user=' + encodeURIComponent(myName), null, function(status, data) {
+            apiCall('GET', '/api/room/' + roomId + '?user=' + encodeURIComponent(myName) + '&deviceId=' + encodeURIComponent(deviceId), null, function(status, data) {
                 if (status !== 200 || !data) return;
                 if (typeof data === 'string') data = JSON.parse(data);
                 var oldHash = lastMedHash;

@@ -39,15 +39,30 @@ async function saveRoom(id, room) {
   await redis.set(`med:${id}`, JSON.stringify(room));
 }
 
-// メンバー追跡（名前があればmembersに追加）
-function trackMember(room, name) {
+// メンバー追跡（deviceIdがあれば同一デバイスは1人として扱う）
+function trackMember(room, name, deviceId) {
   if (!name) return;
   if (!Array.isArray(room.members)) room.members = [];
+  // deviceIdで検索（同じ端末なら名前が変わっても同一人物）
+  if (deviceId) {
+    const byDevice = room.members.find(m => m.deviceId === deviceId);
+    if (byDevice) {
+      // 管理人名も連動更新
+      if (room.admin === byDevice.name && byDevice.name !== name) {
+        room.admin = name;
+      }
+      byDevice.name = name;
+      byDevice.lastSeen = new Date().toISOString();
+      return;
+    }
+  }
+  // 名前で検索（後方互換）
   const existing = room.members.find(m => m.name === name);
   if (existing) {
     existing.lastSeen = new Date().toISOString();
+    if (deviceId && !existing.deviceId) existing.deviceId = deviceId;
   } else {
-    room.members.push({ name, joinedAt: new Date().toISOString(), lastSeen: new Date().toISOString() });
+    room.members.push({ name, deviceId: deviceId || '', joinedAt: new Date().toISOString(), lastSeen: new Date().toISOString() });
   }
 }
 
@@ -86,6 +101,7 @@ module.exports = async (req, res) => {
       const body = await parseBody(req);
       const id = crypto.randomBytes(4).toString('hex');
       const creatorName = (body.creator || '').trim();
+      const deviceId = (body.deviceId || '').trim();
       const room = {
         id,
         name: body.name || '薬剤管理',
@@ -97,7 +113,7 @@ module.exports = async (req, res) => {
       };
       // 作成者をメンバーに追加
       if (creatorName) {
-        trackMember(room, creatorName);
+        trackMember(room, creatorName, deviceId);
       }
       await saveRoom(id, room);
       return res.status(200).json({ id });
@@ -117,7 +133,8 @@ module.exports = async (req, res) => {
       }
       // メンバー追跡
       if (userName) {
-        trackMember(room, userName);
+        const deviceId = url.searchParams.get('deviceId') || '';
+        trackMember(room, userName, deviceId);
         await saveRoom(id, room);
       }
       // pushSubscriptionsは返さない
