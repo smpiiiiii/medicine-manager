@@ -1093,16 +1093,18 @@
             qtyRow.appendChild(qtyVal);
             qtyRow.appendChild(plusBtn);
 
-            // 最終更新日時・更新者表示
-            if (med.updatedAt || med.updatedBy) {
+            // 最終更新日時・更新者表示（更新情報がなければ登録情報を表示）
+            var dispBy = med.updatedBy || med.addedBy || '';
+            var dispAt = med.updatedAt || med.addedAt || '';
+            if (dispAt || dispBy) {
                 var updInfo = document.createElement('span');
                 updInfo.style.cssText = 'font-size:10px;color:#64748b;margin-left:8px;white-space:nowrap;display:flex;align-items:center;gap:3px;';
                 var timeStr = '';
-                if (med.updatedAt) {
-                    var ud = new Date(med.updatedAt);
+                if (dispAt) {
+                    var ud = new Date(dispAt);
                     timeStr = (ud.getMonth()+1) + '/' + ud.getDate() + ' ' + ('0'+ud.getHours()).slice(-2) + ':' + ('0'+ud.getMinutes()).slice(-2);
                 }
-                updInfo.innerHTML = '🕐 ' + timeStr + (med.updatedBy ? ' ' + escHtml(med.updatedBy) : '');
+                updInfo.innerHTML = '🕐 ' + timeStr + (dispBy ? ' ' + escHtml(dispBy) : '');
                 qtyRow.appendChild(updInfo);
             }
             card.appendChild(qtyRow);
