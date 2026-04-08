@@ -255,10 +255,23 @@
 
 <!-- FAB（追加ボタン） -->
 <div id="fabBtn" style="position:fixed;bottom:70px;right:16px;z-index:99;flex-direction:column;gap:10px;align-items:flex-end;">
+    <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:16px;padding:0;box-shadow:0 4px 16px rgba(251,113,133,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fb7185,#e11d48);" onclick="openLogModal()">📋</button>
     <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:16px;padding:0;box-shadow:0 4px 16px rgba(16,185,129,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#10b981,#059669);" onclick="openCsvModal()">📄</button>
     <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:16px;padding:0;box-shadow:0 4px 16px rgba(139,92,246,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#8b5cf6,#7c3aed);" onclick="exportCsv()">📥</button>
     <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:18px;padding:0;box-shadow:0 4px 16px rgba(245,158,11,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f59e0b,#d97706);" onclick="openScanInput()">🏷️</button>
     <button class="btn btn-primary" style="width:56px;height:56px;border-radius:50%;font-size:24px;padding:0;box-shadow:0 4px 16px rgba(14,165,233,.4);display:flex;align-items:center;justify-content:center;" onclick="openAddModal()">＋</button>
+</div>
+
+<!-- 操作ログモーダル -->
+<div class="modal-overlay" id="logModal">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <h2 style="margin-top:0">📋 操作ログ</h2>
+        <div id="logList" style="max-height:60vh;overflow-y:auto;"></div>
+        <div style="margin-top:16px;text-align:center">
+            <button class="btn btn-primary" onclick="document.getElementById('logModal').classList.remove('active')">閉じる</button>
+        </div>
+    </div>
 </div>
 
 <!-- 自動リロードバッジ -->
@@ -1879,6 +1892,36 @@
             }
         });
     });
+
+    // 操作ログモーダル表示
+    window.openLogModal = function() {
+        var logEl = document.getElementById('logList');
+        var logs = (roomData && roomData.usageLog) ? roomData.usageLog : [];
+        if (logs.length === 0) {
+            logEl.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:32px 0">まだ操作ログがありません</div>';
+        } else {
+            var html = '';
+            // 新しい順に表示
+            for (var i = logs.length - 1; i >= 0; i--) {
+                var log = logs[i];
+                var dt = log.at ? new Date(log.at) : null;
+                var timeStr = dt ? (dt.getMonth()+1) + '/' + dt.getDate() + ' ' + ('0'+dt.getHours()).slice(-2) + ':' + ('0'+dt.getMinutes()).slice(-2) : '-';
+                var icon = log.delta > 0 ? '📈' : log.delta < 0 ? '📉' : '🔄';
+                var color = log.delta > 0 ? '#10b981' : log.delta < 0 ? '#f43f5e' : '#94a3b8';
+                var deltaStr = log.delta > 0 ? '+' + log.delta : '' + log.delta;
+                html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(148,163,184,.15)">';
+                html += '<span style="font-size:20px">' + icon + '</span>';
+                html += '<div style="flex:1;min-width:0">';
+                html += '<div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (log.name || '-') + '</div>';
+                html += '<div style="font-size:11px;color:#94a3b8">' + timeStr + ' / ' + (log.by || '不明') + '</div>';
+                html += '</div>';
+                html += '<div style="font-weight:700;font-size:15px;color:' + color + '">' + deltaStr + ' → ' + log.newQty + '</div>';
+                html += '</div>';
+            }
+            logEl.innerHTML = html;
+        }
+        document.getElementById('logModal').classList.add('active');
+    };
 
     // 担当者名ラベル初期化
     if (myName) {
