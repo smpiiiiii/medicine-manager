@@ -9,6 +9,27 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
+// Googleスプレッドシートに変更ログを送信（非同期、失敗してもAPIは止めない）
+function logToSheet(action, userName, itemName, details) {
+  const webhookUrl = process.env.SHEET_WEBHOOK_URL;
+  if (!webhookUrl) return;
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const timestamp = jst.toISOString().replace('T', ' ').substring(0, 19);
+  const payload = JSON.stringify({
+    timestamp,
+    action,
+    userName: userName || '不明',
+    itemName: itemName || '',
+    details: details || '',
+  });
+  fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: payload,
+  }).catch(() => {}); // エラーは無視
+}
+
 // ルームデータの読み書き
 async function getRoom(id) {
   const data = await redis.get(`med:${id}`);
@@ -104,6 +125,7 @@ module.exports = async (req, res) => {
 
       room.medicines.push(medicine);
       await saveRoom(id, room);
+      logToSheet('追加', medicine.addedBy, medicine.name, `数量:${medicine.quantity} 単位:${medicine.unit} 期限:${medicine.expiryDate || 'なし'} 場所:${medicine.location} カテゴリ:${medicine.category}`);
       return res.status(200).json({ status: 'ok', medicine });
     }
 
@@ -129,6 +151,7 @@ module.exports = async (req, res) => {
       med.updatedAt = new Date().toISOString();
 
       await saveRoom(id, room);
+      logToSheet('更新', med.updatedBy, med.name, `数量:${med.quantity} 単位:${med.unit} 期限:${med.expiryDate || 'なし'} 場所:${med.location}`);
       return res.status(200).json({ status: 'ok' });
     }
 
@@ -142,9 +165,10 @@ module.exports = async (req, res) => {
 
       const idx = room.medicines.findIndex(m => m.mid === body.mid);
       if (idx === -1) return res.status(404).json({ error: '薬剤が見つかりません' });
-
+      const deletedName = room.medicines[idx].name;
       room.medicines.splice(idx, 1);
       await saveRoom(id, room);
+      logToSheet('削除', body.deletedBy || '', deletedName, '');
       return res.status(200).json({ status: 'ok' });
     }
 
@@ -178,6 +202,7 @@ module.exports = async (req, res) => {
       if (room.usageLog.length > 100) room.usageLog = room.usageLog.slice(-100);
 
       await saveRoom(id, room);
+      logToSheet('数量変更', body.updatedBy, med.name, `${delta > 0 ? '+' : ''}${delta} → 在庫:${med.quantity}`);
       return res.status(200).json({ status: 'ok', quantity: med.quantity });
     }
 
@@ -244,6 +269,9 @@ module.exports = async (req, res) => {
       }
 
       await saveRoom(id, room);
+      if (added.length > 0) {
+        logToSheet('CSVインポート', body.addedBy || '', `${added.length}件一括追加`, added.slice(0, 5).map(m => m.name).join(', ') + (added.length > 5 ? ` 他${added.length - 5}件` : ''));
+      }
       return res.status(200).json({ status: 'ok', added: added.length, errors });
     }
 

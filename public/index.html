@@ -210,6 +210,10 @@
     <!-- ===== ルーム画面 ===== -->
     <div id="roomView" class="hidden">
         <button class="btn btn-outline" id="backToTopBtn" style="margin-bottom:12px;">← クリニック選択へ戻る</button>
+        <!-- 担当者名バッジ -->
+        <div style="text-align:right;margin-bottom:8px;">
+            <span id="myNameLabel" onclick="changeMyName()" style="display:inline-block;cursor:pointer;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;background:rgba(14,165,233,.15);color:#38bdf8;border:1px solid rgba(14,165,233,.3)">👤 担当者未設定</span>
+        </div>
         <!-- 通知バナー -->
         <div id="notifyBanner" class="notify-banner hidden" onclick="requestNotification()">
             <div class="emoji">🔔</div>
@@ -470,7 +474,23 @@
     var API = location.origin;
     var roomId = null;
     var roomData = null;
-    var myName = '';
+    var myName = localStorage.getItem('med_myName') || '';
+    // 初回アクセス時に名前を聞く
+    if (!myName) {
+        myName = prompt('あなたの名前を入力してください（端末に保存されます）') || '';
+        if (myName) localStorage.setItem('med_myName', myName);
+    }
+    // 名前変更関数
+    window.changeMyName = function() {
+        var n = prompt('名前を変更', myName);
+        if (n !== null && n.trim()) {
+            myName = n.trim();
+            localStorage.setItem('med_myName', myName);
+            var el = document.getElementById('myNameLabel');
+            if (el) el.textContent = '👤 ' + myName;
+            showToast('名前を「' + myName + '」に変更しました');
+        }
+    };
     var currentFilter = 'all';
     var searchQuery = '';
 
@@ -1859,6 +1879,12 @@
             }
         });
     });
+
+    // 担当者名ラベル初期化
+    if (myName) {
+        var nl = document.getElementById('myNameLabel');
+        if (nl) nl.textContent = '👤 ' + myName;
+    }
 
     init();
 })();
