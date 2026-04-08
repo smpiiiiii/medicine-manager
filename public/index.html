@@ -237,6 +237,18 @@
             <div class="filter-tab" data-filter="out">⬛ 在庫切れ</div>
         </div>
 
+        <!-- ソート -->
+        <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:#94a3b8;font-weight:700">並び替え:</span>
+            <select id="sortSelect" style="flex:1;padding:6px 10px;border-radius:8px;border:1.5px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;font-weight:600">
+                <option value="updated">🔄 更新順</option>
+                <option value="name">🅰 あいうえお順</option>
+                <option value="category">📌 種類順</option>
+                <option value="expiry">⏰ 期限順</option>
+                <option value="qty">📦 数量順</option>
+            </select>
+        </div>
+
         <!-- 薬剤リスト -->
         <div id="medList"></div>
 
@@ -269,7 +281,7 @@
         <h2 style="margin-top:0">📋 操作ログ</h2>
         <div id="logList" style="max-height:60vh;overflow-y:auto;"></div>
         <div style="margin-top:16px;text-align:center">
-            <button class="btn btn-primary" onclick="document.getElementById('logModal').classList.remove('active')">閉じる</button>
+            <button class="btn btn-primary" onclick="document.getElementById('logModal').classList.remove('show')">閉じる</button>
         </div>
     </div>
 </div>
@@ -506,6 +518,7 @@
     };
     var currentFilter = 'all';
     var searchQuery = '';
+    var currentSort = 'updated';
 
     // === DOM ===
     var topView = document.getElementById('topView');
@@ -893,14 +906,31 @@
         var expired = 0, warning = 0, safe = 0, outOfStock = 0;
         var alertMeds = [];
 
-        // ソート: 期限切れ→期限近い→安全の順
-        meds.sort(function(a, b) {
-            var sa = getExpiryStatus(a.expiryDate);
-            var sb = getExpiryStatus(b.expiryDate);
-            if (sa.days === null) return 1;
-            if (sb.days === null) return -1;
-            return sa.days - sb.days;
-        });
+        // ソート
+        if (currentSort === 'name') {
+            meds.sort(function(a, b) { return (a.name || '').localeCompare(b.name || '', 'ja'); });
+        } else if (currentSort === 'category') {
+            meds.sort(function(a, b) {
+                var ca = (a.category || '') + (a.location || '');
+                var cb = (b.category || '') + (b.location || '');
+                return ca.localeCompare(cb, 'ja') || (a.name || '').localeCompare(b.name || '', 'ja');
+            });
+        } else if (currentSort === 'expiry') {
+            meds.sort(function(a, b) {
+                var sa = getExpiryStatus(a.expiryDate);
+                var sb = getExpiryStatus(b.expiryDate);
+                if (sa.days === null) return 1;
+                if (sb.days === null) return -1;
+                return sa.days - sb.days;
+            });
+        } else if (currentSort === 'qty') {
+            meds.sort(function(a, b) { return a.quantity - b.quantity; });
+        } else {
+            // 更新順（デフォルト）
+            meds.sort(function(a, b) {
+                return (b.updatedAt || b.addedAt || '').localeCompare(a.updatedAt || a.addedAt || '');
+            });
+        }
 
         // フィルタ＆描画
         var filtered = [];
@@ -1090,6 +1120,12 @@
         for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
         tab.classList.add('active');
         currentFilter = tab.getAttribute('data-filter');
+        renderMedicines();
+    });
+
+    // === ソート ===
+    document.getElementById('sortSelect').addEventListener('change', function() {
+        currentSort = this.value;
         renderMedicines();
     });
 
@@ -1935,7 +1971,7 @@
             }
             logEl.innerHTML = html;
         }
-        document.getElementById('logModal').classList.add('active');
+        document.getElementById('logModal').classList.add('show');
     };
 
     // 担当者名ラベル初期化
