@@ -85,14 +85,20 @@ module.exports = async (req, res) => {
     if (pathname === '/api/create' && req.method === 'POST') {
       const body = await parseBody(req);
       const id = crypto.randomBytes(4).toString('hex');
+      const creatorName = (body.creator || '').trim();
       const room = {
         id,
         name: body.name || '薬剤管理',
+        admin: creatorName, // 作成者が管理人
         medicines: [],
         members: [],
         pushSubscriptions: [],
         created: new Date().toISOString(),
       };
+      // 作成者をメンバーに追加
+      if (creatorName) {
+        trackMember(room, creatorName);
+      }
       await saveRoom(id, room);
       return res.status(200).json({ id });
     }
@@ -104,6 +110,11 @@ module.exports = async (req, res) => {
       let room = await getRoom(id);
       if (!room) return res.status(404).json({ error: 'Not found' });
       if (typeof room === 'string') room = JSON.parse(room);
+      // マイグレーション: adminが未設定の場合、最初のメンバーをadminに設定
+      if (!room.admin && Array.isArray(room.members) && room.members.length > 0) {
+        room.admin = room.members[0].name;
+        await saveRoom(id, room);
+      }
       // メンバー追跡
       if (userName) {
         trackMember(room, userName);
@@ -289,6 +300,67 @@ module.exports = async (req, res) => {
         logToSheet('CSVインポート', body.addedBy || '', `${added.length}件一括追加`, added.slice(0, 5).map(m => m.name).join(', ') + (added.length > 5 ? ` 他${added.length - 5}件` : ''));
       }
       return res.status(200).json({ status: 'ok', added: added.length, errors });
+    }
+
+    // === 管理人譲渡 ===
+    if (pathname.match(/^\/api\/room\/[^/]+\/transfer-admin$/) && req.method === 'POST') {
+      const id = pathname.split('/')[3];
+      const body = await parseBody(req);
+      let room = await getRoom(id);
+      if (!room) return res.status(404).json({ error: 'Not found' });
+      if (typeof room === 'string') room = JSON.parse(room);
+
+      const requestBy = (body.requestBy || '').trim();
+      const newAdmin = (body.newAdmin || '').trim();
+      if (!newAdmin) return res.status(400).json({ error: '譲渡先を指定してください' });
+      if (room.admin && room.admin !== requestBy) {
+        return res.status(403).json({ error: '管理人のみ権限を譲渡できます' });
+      }
+      room.admin = newAdmin;
+      await saveRoom(id, room);
+      logToSheet('管理人譲渡', requestBy, '', `${requestBy} → ${newAdmin}`);
+      return res.status(200).json({ status: 'ok', admin: newAdmin });
+    }
+
+    // === クリニック完全削除（管理人のみ） ===
+    if (pathname.match(/^\/api\/room\/[^/]+\/delete-room$/) && req.method === 'POST') {
+      const id = pathname.split('/')[3];
+      const body = await parseBody(req);
+      let room = await getRoom(id);
+      if (!room) return res.status(404).json({ error: 'Not found' });
+      if (typeof room === 'string') room = JSON.parse(room);
+
+      const requestBy = (body.requestBy || '').trim();
+      if (room.admin && room.admin !== requestBy) {
+        return res.status(403).json({ error: '管理人のみクリニックを削除できます' });
+      }
+      // Redisからルームデータを完全削除
+      await redis.del(`med:${id}`);
+      logToSheet('クリニック削除', requestBy, room.name || '', '完全削除');
+      return res.status(200).json({ status: 'ok' });
+    }
+
+    // === スタッフ退出 ===
+    if (pathname.match(/^\/api\/room\/[^/]+\/leave$/) && req.method === 'POST') {
+      const id = pathname.split('/')[3];
+      const body = await parseBody(req);
+      let room = await getRoom(id);
+      if (!room) return res.status(404).json({ error: 'Not found' });
+      if (typeof room === 'string') room = JSON.parse(room);
+
+      const userName = (body.userName || '').trim();
+      if (!userName) return res.status(400).json({ error: '名前が必要です' });
+      // 管理人は先に譲渡が必要
+      if (room.admin === userName) {
+        return res.status(403).json({ error: '管理人は退出前に権限を譲渡してください' });
+      }
+      // メンバーから削除
+      if (Array.isArray(room.members)) {
+        room.members = room.members.filter(m => m.name !== userName);
+      }
+      await saveRoom(id, room);
+      logToSheet('退出', userName, '', 'クリニックから退出');
+      return res.status(200).json({ status: 'ok' });
     }
 
     // === 期限チェック（cron用） ===

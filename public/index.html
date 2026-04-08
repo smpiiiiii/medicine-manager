@@ -631,7 +631,7 @@
                 card.appendChild(info);
                 card.appendChild(arrow);
 
-                // 削除ボタン（全ユーザーに開放）
+                // 削除ボタン（管理人のみサーバー削除、それ以外はローカル履歴削除）
                 var delBtn = document.createElement('button');
                 delBtn.style.cssText = 'width:36px;height:36px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#f87171;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;';
                 delBtn.textContent = '\ud83d\uddd1\ufe0f';
@@ -641,11 +641,41 @@
                 delBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (confirm('"' + h.name + '" \u3092\u30ea\u30b9\u30c8\u304b\u3089\u524a\u9664\u3057\u307e\u3059\u304b\uff1f')) {
-                        removeFromHistory(h.id);
-                        renderHistory();
-                        showToast('\ud83d\uddd1\ufe0f \u524a\u9664\u3057\u307e\u3057\u305f');
-                    }
+                    // まずルーム情報を取得して管理人かチェック
+                    apiCall('GET', '/api/room/' + h.id, null, function(st, rd) {
+                        if (st === 200 && rd) {
+                            if (typeof rd === 'string') rd = JSON.parse(rd);
+                            var isAdmin = rd.admin === myName;
+                            if (isAdmin) {
+                                // 管理人: サーバーデータも完全削除
+                                if (confirm('管理人として「' + h.name + '」を完全に削除しますか？\n（全データが消えます）')) {
+                                    apiCall('POST', '/api/room/' + h.id + '/delete-room', { requestBy: myName }, function(ds, dd) {
+                                        if (ds === 200) {
+                                            removeFromHistory(h.id);
+                                            renderHistory();
+                                            showToast('🗑 クリニックを完全に削除しました');
+                                        } else {
+                                            alert('削除に失敗しました: ' + (dd ? dd.error : ''));
+                                        }
+                                    });
+                                }
+                            } else {
+                                // スタッフ: リストから非表示のみ
+                                if (confirm('「' + h.name + '」をリストから削除しますか？\n（クリニック自体は残ります）')) {
+                                    removeFromHistory(h.id);
+                                    renderHistory();
+                                    showToast('\ud83d\uddd1\ufe0f リストから削除しました');
+                                }
+                            }
+                        } else {
+                            // ルームが見つからない場合は履歴だけ削除
+                            if (confirm('「' + h.name + '」をリストから削除しますか？')) {
+                                removeFromHistory(h.id);
+                                renderHistory();
+                                showToast('\ud83d\uddd1\ufe0f 削除しました');
+                            }
+                        }
+                    });
                 });
                 row.appendChild(delBtn);
 
@@ -691,7 +721,12 @@
 
       document.getElementById('createRoomBtn').addEventListener('click', function() {
         var name = document.getElementById('roomName').value.trim() || '薬剤管理';
-        apiCall('POST', '/api/create', { name: name }, function(status, data) {
+        // 作成者名を聞く（まだ名前が未設定の場合）
+        if (!myName) {
+            myName = prompt('あなたの名前を入力してください（管理人として登録されます）') || '';
+            if (myName) localStorage.setItem('med_myName', myName);
+        }
+        apiCall('POST', '/api/create', { name: name, creator: myName }, function(status, data) {
             if (status === 200 && data) {
                 addToHistory(data.id, name);
                 location.href = '/room/' + data.id;
@@ -1057,6 +1092,19 @@
             qtyRow.appendChild(minusBtn);
             qtyRow.appendChild(qtyVal);
             qtyRow.appendChild(plusBtn);
+
+            // 最終更新日時・更新者表示
+            if (med.updatedAt || med.updatedBy) {
+                var updInfo = document.createElement('span');
+                updInfo.style.cssText = 'font-size:10px;color:#64748b;margin-left:8px;white-space:nowrap;display:flex;align-items:center;gap:3px;';
+                var timeStr = '';
+                if (med.updatedAt) {
+                    var ud = new Date(med.updatedAt);
+                    timeStr = (ud.getMonth()+1) + '/' + ud.getDate() + ' ' + ('0'+ud.getHours()).slice(-2) + ':' + ('0'+ud.getMinutes()).slice(-2);
+                }
+                updInfo.innerHTML = '🕐 ' + timeStr + (med.updatedBy ? ' ' + escHtml(med.updatedBy) : '');
+                qtyRow.appendChild(updInfo);
+            }
             card.appendChild(qtyRow);
 
             // 詳細
@@ -1992,54 +2040,123 @@
         }
         section.classList.remove('hidden');
         listEl.innerHTML = '';
-        // 最終アクセス順にソート（新しい順）
+        var adminName = (roomData && roomData.admin) ? roomData.admin : '';
+        var isMeAdmin = adminName === myName;
+        // 最終アクセス順にソート（新しい順）、ただし管理人は常に先頭
         var sorted = members.slice().sort(function(a, b) {
+            if (a.name === adminName) return -1;
+            if (b.name === adminName) return 1;
             return (b.lastSeen || '').localeCompare(a.lastSeen || '');
         });
         for (var i = 0; i < sorted.length; i++) {
-            var m = sorted[i];
-            var row = document.createElement('div');
-            row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(148,163,184,.1);';
-            // アバター（名前の頭文字）
-            var avatar = document.createElement('div');
-            var colors = ['#0ea5e9','#8b5cf6','#f59e0b','#10b981','#f43f5e','#6366f1','#ec4899','#14b8a6'];
-            var colorIdx = 0;
-            for (var ci = 0; ci < m.name.length; ci++) colorIdx += m.name.charCodeAt(ci);
-            avatar.style.cssText = 'width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;background:' + colors[colorIdx % colors.length] + ';';
-            avatar.textContent = m.name.charAt(0);
-            // 名前 & 最終活動
-            var info = document.createElement('div');
-            info.style.cssText = 'flex:1;min-width:0;';
-            var nameEl = document.createElement('div');
-            nameEl.style.cssText = 'font-size:13px;font-weight:700;color:#f1f5f9;';
-            nameEl.textContent = m.name;
-            if (m.name === myName) {
-                nameEl.textContent += ' (自分)';
-                nameEl.style.color = '#38bdf8';
-            }
-            var timeEl = document.createElement('div');
-            timeEl.style.cssText = 'font-size:10px;color:#64748b;margin-top:1px;';
-            if (m.lastSeen) {
-                var dt = new Date(m.lastSeen);
-                var now = new Date();
-                var diffMin = Math.floor((now - dt) / 60000);
-                if (diffMin < 1) timeEl.textContent = '今アクティブ';
-                else if (diffMin < 60) timeEl.textContent = diffMin + '分前';
-                else if (diffMin < 1440) timeEl.textContent = Math.floor(diffMin / 60) + '時間前';
-                else timeEl.textContent = Math.floor(diffMin / 1440) + '日前';
-            }
-            info.appendChild(nameEl);
-            info.appendChild(timeEl);
-            // オンラインインジケーター
-            var indicator = document.createElement('div');
-            var lastSeenDate = m.lastSeen ? new Date(m.lastSeen) : null;
-            var isRecent = lastSeenDate && (new Date() - lastSeenDate) < 5 * 60 * 1000; // 5分以内
-            indicator.style.cssText = 'width:8px;height:8px;border-radius:50%;flex-shrink:0;background:' + (isRecent ? '#10b981' : '#475569') + ';';
-            indicator.title = isRecent ? 'オンライン' : 'オフライン';
-            row.appendChild(avatar);
-            row.appendChild(info);
-            row.appendChild(indicator);
-            listEl.appendChild(row);
+            (function(m) {
+                var isAdminMember = m.name === adminName;
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(148,163,184,.1);';
+                // アバター（名前の頭文字）
+                var avatar = document.createElement('div');
+                var colors = ['#0ea5e9','#8b5cf6','#f59e0b','#10b981','#f43f5e','#6366f1','#ec4899','#14b8a6'];
+                var colorIdx = 0;
+                for (var ci = 0; ci < m.name.length; ci++) colorIdx += m.name.charCodeAt(ci);
+                var avatarBg = isAdminMember ? '#f59e0b' : colors[colorIdx % colors.length];
+                avatar.style.cssText = 'width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;background:' + avatarBg + ';';
+                avatar.textContent = isAdminMember ? '👑' : m.name.charAt(0);
+                // 名前 & 最終活動
+                var info = document.createElement('div');
+                info.style.cssText = 'flex:1;min-width:0;';
+                var nameRow = document.createElement('div');
+                nameRow.style.cssText = 'display:flex;align-items:center;gap:6px;';
+                var nameEl = document.createElement('span');
+                nameEl.style.cssText = 'font-size:13px;font-weight:700;color:#f1f5f9;';
+                nameEl.textContent = m.name;
+                if (m.name === myName) {
+                    nameEl.textContent += ' (自分)';
+                    nameEl.style.color = '#38bdf8';
+                }
+                nameRow.appendChild(nameEl);
+                // 管理人バッジ
+                if (isAdminMember) {
+                    var badge = document.createElement('span');
+                    badge.style.cssText = 'font-size:9px;padding:1px 6px;border-radius:6px;background:rgba(245,158,11,.2);color:#fbbf24;font-weight:900;white-space:nowrap;';
+                    badge.textContent = '管理人';
+                    nameRow.appendChild(badge);
+                }
+                var timeEl = document.createElement('div');
+                timeEl.style.cssText = 'font-size:10px;color:#64748b;margin-top:1px;';
+                if (m.lastSeen) {
+                    var dt = new Date(m.lastSeen);
+                    var now = new Date();
+                    var diffMin = Math.floor((now - dt) / 60000);
+                    if (diffMin < 1) timeEl.textContent = '今アクティブ';
+                    else if (diffMin < 60) timeEl.textContent = diffMin + '分前';
+                    else if (diffMin < 1440) timeEl.textContent = Math.floor(diffMin / 60) + '時間前';
+                    else timeEl.textContent = Math.floor(diffMin / 1440) + '日前';
+                }
+                info.appendChild(nameRow);
+                info.appendChild(timeEl);
+                // オンラインインジケーター
+                var indicator = document.createElement('div');
+                var lastSeenDate = m.lastSeen ? new Date(m.lastSeen) : null;
+                var isRecent = lastSeenDate && (new Date() - lastSeenDate) < 5 * 60 * 1000;
+                indicator.style.cssText = 'width:8px;height:8px;border-radius:50%;flex-shrink:0;background:' + (isRecent ? '#10b981' : '#475569') + ';';
+                indicator.title = isRecent ? 'オンライン' : 'オフライン';
+
+                // 管理人の場合、他メンバーに「権限譲渡」ボタン表示
+                var actionBtns = document.createElement('div');
+                actionBtns.style.cssText = 'display:flex;gap:4px;flex-shrink:0;';
+                if (isMeAdmin && !isAdminMember && m.name !== myName) {
+                    var transferBtn = document.createElement('button');
+                    transferBtn.style.cssText = 'font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.1);color:#fbbf24;cursor:pointer;font-weight:700;white-space:nowrap;';
+                    transferBtn.textContent = '👑 譲渡';
+                    transferBtn.addEventListener('click', function() {
+                        if (confirm(m.name + ' に管理人権限を譲渡しますか？\n（あなたはスタッフになります）')) {
+                            apiCall('POST', '/api/room/' + roomId + '/transfer-admin', { requestBy: myName, newAdmin: m.name }, function(st, rd) {
+                                if (st === 200) {
+                                    showToast('👑 ' + m.name + ' に権限を譲渡しました');
+                                    refreshRoomData();
+                                } else {
+                                    alert('譲渡に失敗: ' + (rd ? rd.error : ''));
+                                }
+                            });
+                        }
+                    });
+                    actionBtns.appendChild(transferBtn);
+                }
+                actionBtns.appendChild(indicator);
+
+                row.appendChild(avatar);
+                row.appendChild(info);
+                row.appendChild(actionBtns);
+                listEl.appendChild(row);
+            })(sorted[i]);
+        }
+
+        // 退出ボタン（管理人以外のスタッフが自分で退出）
+        var adminName2 = (roomData && roomData.admin) ? roomData.admin : '';
+        if (myName && myName !== adminName2) {
+            var leaveBtn = document.createElement('button');
+            leaveBtn.style.cssText = 'width:100%;margin-top:10px;padding:8px;border-radius:10px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08);color:#f87171;font-size:12px;font-weight:700;cursor:pointer;text-align:center;';
+            leaveBtn.textContent = '🚪 このクリニックから退出する';
+            leaveBtn.addEventListener('click', function() {
+                if (confirm('このクリニックから退出しますか？\n（データは削除されません）')) {
+                    apiCall('POST', '/api/room/' + roomId + '/leave', { userName: myName }, function(st, rd) {
+                        if (st === 200) {
+                            removeFromHistory(roomId);
+                            showToast('🚪 退出しました');
+                            location.href = '/';
+                        } else {
+                            alert('退出に失敗: ' + (rd ? rd.error : ''));
+                        }
+                    });
+                }
+            });
+            listEl.appendChild(leaveBtn);
+        } else if (myName && myName === adminName2 && members.length > 1) {
+            // 管理人で他メンバーがいる場合は譲渡を促すメッセージ
+            var adminNote = document.createElement('div');
+            adminNote.style.cssText = 'font-size:10px;color:#64748b;text-align:center;margin-top:6px;padding:4px;';
+            adminNote.textContent = '※ 退出するには先にスタッフへ管理人を譲渡してください';
+            listEl.appendChild(adminNote);
         }
     }
 
