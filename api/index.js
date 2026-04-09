@@ -351,22 +351,40 @@ module.exports = async (req, res) => {
         const expiryDate = (item.expiryDate || '').trim();
         if (!name) { errors.push({ row: i + 1, error: '薬剤名が空です' }); continue; }
 
-        const medicine = {
-          mid: crypto.randomBytes(4).toString('hex'),
-          name,
-          quantity: parseInt(item.quantity) || 1,
-          unit: (item.unit || '個').trim(),
-          expiryDate,
-          location: (item.location || '').trim(),
-          category: (item.category || '').trim(),
-          memo: (item.memo || '').trim(),
-          barcode: (item.barcode || '').trim(),
-          addedBy: (body.addedBy || '').trim(),
-          addedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        room.medicines.push(medicine);
-        added.push(medicine);
+        const qty = parseInt(item.quantity) || 1;
+        const unit = (item.unit || '個').trim();
+
+        // 同一薬剤名+単位の既存データを検索（ロット統合）
+        const existing = room.medicines.find(m => m.name === name && (m.unit || '個') === unit);
+        if (existing) {
+          if (!Array.isArray(existing.lots)) existing.lots = [];
+          const sameLot = expiryDate ? existing.lots.find(l => l.expiryDate === expiryDate) : null;
+          if (sameLot) { sameLot.quantity += qty; }
+          else { existing.lots.push({ expiryDate, quantity: qty }); }
+          existing.lots.sort((a, b) => (a.expiryDate || '9999').localeCompare(b.expiryDate || '9999'));
+          existing.quantity = existing.lots.reduce((s, l) => s + l.quantity, 0);
+          existing.expiryDate = existing.lots.find(l => l.expiryDate)?.expiryDate || '';
+          existing.updatedAt = new Date().toISOString();
+          if (!existing.location && item.location) existing.location = item.location.trim();
+          if (!existing.category && item.category) existing.category = item.category.trim();
+          if (item.barcode && !existing.barcode) existing.barcode = item.barcode.trim();
+          added.push(existing);
+        } else {
+          const medicine = {
+            mid: crypto.randomBytes(4).toString('hex'),
+            name, quantity: qty, unit, expiryDate,
+            location: (item.location || '').trim(),
+            category: (item.category || '').trim(),
+            memo: (item.memo || '').trim(),
+            barcode: (item.barcode || '').trim(),
+            lots: expiryDate ? [{ expiryDate, quantity: qty }] : [],
+            addedBy: (body.addedBy || '').trim(),
+            addedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          room.medicines.push(medicine);
+          added.push(medicine);
+        }
       }
 
       await saveRoom(id, room);
