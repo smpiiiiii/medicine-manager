@@ -958,8 +958,8 @@
         var mm = yymmdd.substring(2, 4);
         var dd = yymmdd.substring(4, 6);
         var yyyy = yy >= 50 ? 1900 + yy : 2000 + yy;
-        // dd=00の場合は月末
-        if (dd === '00') dd = '28';
+        // dd=00の場合は月末日
+        if (dd === '00') dd = '' + new Date(yyyy, parseInt(mm), 0).getDate();
         return yyyy + '-' + mm + '-' + dd;
     }
 
@@ -1919,6 +1919,12 @@
         // YYYYMMDD
         m = val.match(/^(\d{4})(\d{2})(\d{2})$/);
         if (m) return m[1] + '-' + m[2] + '-' + m[3];
+        // YYYY/MM or YYYY-MM（月のみ→月末日）
+        m = val.match(/^(\d{4})[\/\-](\d{1,2})$/);
+        if (m) { var ld = new Date(parseInt(m[1]), parseInt(m[2]), 0).getDate(); return m[1] + '-' + ('0'+m[2]).slice(-2) + '-' + ('0'+ld).slice(-2); }
+        // YYYYMM（6桁、月のみ→月末日）
+        m = val.match(/^(\d{4})(\d{2})$/);
+        if (m) { var ld2 = new Date(parseInt(m[1]), parseInt(m[2]), 0).getDate(); return m[1] + '-' + m[2] + '-' + ('0'+ld2).slice(-2); }
         return val;
     }
 
