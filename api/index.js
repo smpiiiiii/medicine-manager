@@ -142,7 +142,7 @@ module.exports = async (req, res) => {
       return res.status(200).json(safeData);
     }
 
-    // === 薬剤追加 ===
+    // === 薬剤追加（同一名は自動ロット統合） ===
     if (pathname.match(/^\/api\/room\/[^/]+\/add$/) && req.method === 'POST') {
       const id = pathname.split('/')[3];
       const body = await parseBody(req);
@@ -150,26 +150,61 @@ module.exports = async (req, res) => {
       if (!room) return res.status(404).json({ error: 'Not found' });
       if (typeof room === 'string') room = JSON.parse(room);
 
+      const name = (body.name || '').trim();
+      const qty = parseInt(body.quantity) || 1;
+      const unit = (body.unit || '個').trim();
+      const expiryDate = body.expiryDate || '';
+      const addedBy = (body.addedBy || '').trim();
+      if (!name) return res.status(400).json({ error: '薬剤名は必須です' });
+
+      // 同一名の薬剤を検索（ロット統合）
+      const existing = room.medicines.find(m => m.name === name && m.unit === unit);
+      if (existing) {
+        // ロット配列に追加
+        if (!Array.isArray(existing.lots)) {
+          // 既存データをロット化
+          existing.lots = existing.expiryDate
+            ? [{ expiryDate: existing.expiryDate, quantity: existing.quantity }]
+            : [{ expiryDate: '', quantity: existing.quantity }];
+        }
+        // 同じ期限のロットがあれば数量加算
+        const sameLot = existing.lots.find(l => l.expiryDate === expiryDate);
+        if (sameLot) {
+          sameLot.quantity += qty;
+        } else {
+          existing.lots.push({ expiryDate, quantity: qty });
+        }
+        // ロットを期限順ソート
+        existing.lots.sort((a, b) => (a.expiryDate || '9999').localeCompare(b.expiryDate || '9999'));
+        // 合計数量を更新
+        existing.quantity = existing.lots.reduce((s, l) => s + l.quantity, 0);
+        // 最も近い期限をメインに設定
+        existing.expiryDate = existing.lots.find(l => l.expiryDate)?.expiryDate || '';
+        existing.updatedBy = addedBy;
+        existing.updatedAt = new Date().toISOString();
+        // 場所・カテゴリは既存を優先、空なら新規値で埋める
+        if (!existing.location && body.location) existing.location = body.location.trim();
+        if (!existing.category && body.category) existing.category = body.category.trim();
+        if (body.barcode && !existing.barcode) existing.barcode = body.barcode.trim();
+        await saveRoom(id, room);
+        logToSheet('ロット追加', addedBy, name, `+${qty} 期限:${expiryDate || 'なし'} 合計:${existing.quantity}`);
+        return res.status(200).json({ status: 'ok', medicine: existing, merged: true });
+      }
+
+      // 新規薬剤
       const medicine = {
         mid: crypto.randomBytes(4).toString('hex'),
-        name: (body.name || '').trim(),
-        quantity: parseInt(body.quantity) || 1,
-        unit: (body.unit || '個').trim(),
-        expiryDate: body.expiryDate || '',
+        name, quantity: qty, unit, expiryDate,
         location: (body.location || '').trim(),
         category: (body.category || '').trim(),
         memo: (body.memo || '').trim(),
         barcode: (body.barcode || '').trim(),
-        addedBy: (body.addedBy || '').trim(),
-        addedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        lots: expiryDate ? [{ expiryDate, quantity: qty }] : [],
+        addedBy, addedAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       };
-
-      if (!medicine.name) return res.status(400).json({ error: '薬剤名は必須です' });
-
       room.medicines.push(medicine);
       await saveRoom(id, room);
-      logToSheet('追加', medicine.addedBy, medicine.name, `数量:${medicine.quantity} 単位:${medicine.unit} 期限:${medicine.expiryDate || 'なし'} 場所:${medicine.location} カテゴリ:${medicine.category}`);
+      logToSheet('追加', addedBy, name, `数量:${qty} 単位:${unit} 期限:${expiryDate || 'なし'} 場所:${medicine.location} カテゴリ:${medicine.category}`);
       return res.status(200).json({ status: 'ok', medicine });
     }
 
@@ -216,7 +251,7 @@ module.exports = async (req, res) => {
       return res.status(200).json({ status: 'ok' });
     }
 
-    // === 数量増減 ===
+    // === 数量増減（ロット対応：期限の近いものから消費） ===
     if (pathname.match(/^\/api\/room\/[^/]+\/adjust$/) && req.method === 'POST') {
       const id = pathname.split('/')[3];
       const body = await parseBody(req);
@@ -228,26 +263,48 @@ module.exports = async (req, res) => {
       if (!med) return res.status(404).json({ error: '薬剤が見つかりません' });
 
       const delta = parseInt(body.delta) || 0;
-      med.quantity = Math.max(0, med.quantity + delta);
+      const lotIndex = body.lotIndex !== undefined ? parseInt(body.lotIndex) : -1;
+
+      if (Array.isArray(med.lots) && med.lots.length > 0) {
+        if (lotIndex >= 0 && lotIndex < med.lots.length) {
+          // 特定ロットの数量を変更
+          med.lots[lotIndex].quantity = Math.max(0, med.lots[lotIndex].quantity + delta);
+        } else if (delta < 0) {
+          // 消費：期限の近いロットから自動消費
+          let remain = Math.abs(delta);
+          for (const lot of med.lots) {
+            if (remain <= 0) break;
+            const take = Math.min(lot.quantity, remain);
+            lot.quantity -= take;
+            remain -= take;
+          }
+        } else {
+          // 追加：最後のロットに加算
+          med.lots[med.lots.length - 1].quantity += delta;
+        }
+        // 空ロット削除
+        med.lots = med.lots.filter(l => l.quantity > 0);
+        // 合計再計算
+        med.quantity = med.lots.reduce((s, l) => s + l.quantity, 0);
+        med.expiryDate = med.lots.find(l => l.expiryDate)?.expiryDate || '';
+      } else {
+        med.quantity = Math.max(0, med.quantity + delta);
+      }
+
       med.updatedBy = (body.updatedBy || '').trim();
       med.updatedAt = new Date().toISOString();
 
       // 使用ログ
       if (!Array.isArray(room.usageLog)) room.usageLog = [];
       room.usageLog.push({
-        mid: body.mid,
-        name: med.name,
-        delta,
-        newQty: med.quantity,
-        by: body.updatedBy || '',
-        at: new Date().toISOString(),
+        mid: body.mid, name: med.name, delta, newQty: med.quantity,
+        by: body.updatedBy || '', at: new Date().toISOString(),
       });
-      // ログ上限100件
       if (room.usageLog.length > 100) room.usageLog = room.usageLog.slice(-100);
 
       await saveRoom(id, room);
       logToSheet('数量変更', body.updatedBy, med.name, `${delta > 0 ? '+' : ''}${delta} → 在庫:${med.quantity}`);
-      return res.status(200).json({ status: 'ok', quantity: med.quantity });
+      return res.status(200).json({ status: 'ok', quantity: med.quantity, lots: med.lots });
     }
 
     // === プッシュ通知サブスクリプション登録 ===
@@ -367,17 +424,61 @@ module.exports = async (req, res) => {
 
       const userName = (body.userName || '').trim();
       if (!userName) return res.status(400).json({ error: '名前が必要です' });
-      // 管理人は先に譲渡が必要
       if (room.admin === userName) {
         return res.status(403).json({ error: '管理人は退出前に権限を譲渡してください' });
       }
-      // メンバーから削除
       if (Array.isArray(room.members)) {
         room.members = room.members.filter(m => m.name !== userName);
       }
       await saveRoom(id, room);
       logToSheet('退出', userName, '', 'クリニックから退出');
       return res.status(200).json({ status: 'ok' });
+    }
+
+    // === メンバー削除（管理人のみ） ===
+    if (pathname.match(/^\/api\/room\/[^/]+\/kick-member$/) && req.method === 'POST') {
+      const id = pathname.split('/')[3];
+      const body = await parseBody(req);
+      let room = await getRoom(id);
+      if (!room) return res.status(404).json({ error: 'Not found' });
+      if (typeof room === 'string') room = JSON.parse(room);
+
+      const requestBy = (body.requestBy || '').trim();
+      const targetName = (body.targetName || '').trim();
+      if (room.admin !== requestBy) {
+        return res.status(403).json({ error: '管理人のみメンバーを削除できます' });
+      }
+      if (targetName === room.admin) {
+        return res.status(400).json({ error: '管理人は削除できません' });
+      }
+      if (Array.isArray(room.members)) {
+        room.members = room.members.filter(m => m.name !== targetName);
+      }
+      await saveRoom(id, room);
+      logToSheet('メンバー削除', requestBy, targetName, '管理人により削除');
+      return res.status(200).json({ status: 'ok' });
+    }
+
+    // === 薬剤一括削除 ===
+    if (pathname.match(/^\/api\/room\/[^/]+\/bulk-delete$/) && req.method === 'POST') {
+      const id = pathname.split('/')[3];
+      const body = await parseBody(req);
+      let room = await getRoom(id);
+      if (!room) return res.status(404).json({ error: 'Not found' });
+      if (typeof room === 'string') room = JSON.parse(room);
+
+      const mids = body.mids || [];
+      if (!Array.isArray(mids) || mids.length === 0) {
+        return res.status(400).json({ error: '削除対象が指定されていません' });
+      }
+      const midSet = new Set(mids);
+      const before = room.medicines.length;
+      const deletedNames = room.medicines.filter(m => midSet.has(m.mid)).map(m => m.name);
+      room.medicines = room.medicines.filter(m => !midSet.has(m.mid));
+      const deleted = before - room.medicines.length;
+      await saveRoom(id, room);
+      logToSheet('一括削除', body.deletedBy || '', `${deleted}件`, deletedNames.slice(0, 5).join(', '));
+      return res.status(200).json({ status: 'ok', deleted });
     }
 
     // === 期限チェック（cron用） ===
