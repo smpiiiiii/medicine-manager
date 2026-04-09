@@ -75,33 +75,17 @@
         xhr.send(JSON.stringify({ mids: mids, deletedBy: window._medMyName || '' }));
     };
 
-    // --- 柔軟な日付パース（CSVインポート用） ---
+    // --- 日付パース（3パターンのみ） ---
     window.parseDateFlexible = function(str) {
         if (!str) return '';
         str = str.trim();
-        // ISO形式: 2026-04-15
-        var m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        // YYYY-MM-DD or YYYY/MM/DD
+        var m = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
         if (m) return m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2);
-        // スラッシュ: 2026/04/15 or 2026/4/15
-        m = str.match(/^(\d{4})[\/](\d{1,2})[\/](\d{1,2})$/);
-        if (m) return m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2);
-        // 日本語: 2026年4月15日
-        m = str.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日?$/);
-        if (m) return m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2);
-        // 8桁数字: 20260415
+        // YYYYMMDD
         m = str.match(/^(\d{4})(\d{2})(\d{2})$/);
         if (m) return m[1] + '-' + m[2] + '-' + m[3];
-        // M/D/Y: 4/15/2026
-        m = str.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})$/);
-        if (m) return m[3] + '-' + ('0' + m[1]).slice(-2) + '-' + ('0' + m[2]).slice(-2);
-        // 6桁: YYMMDD
-        m = str.match(/^(\d{2})(\d{2})(\d{2})$/);
-        if (m) {
-            var yy = parseInt(m[1]);
-            var yyyy = yy >= 50 ? 1900 + yy : 2000 + yy;
-            return yyyy + '-' + m[2] + '-' + m[3];
-        }
-        return str; // パースできない場合はそのまま返す
+        return str;
     };
 
     // --- GS1解析後の薬剤名検索強化 ---

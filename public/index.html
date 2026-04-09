@@ -1913,22 +1913,12 @@
     function normalizeDate(val) {
         if (!val) return '';
         val = val.trim();
-        // 日本語: 2026年4月15日
-        var mj = val.match(/(\d{4})年(\d{1,2})月(\d{1,2})日?/);
-        if (mj) return mj[1] + '-' + ('0'+mj[2]).slice(-2) + '-' + ('0'+mj[3]).slice(-2);
-        val = val.replace(/[年月]/g, '-').replace(/日/g, '').trim();
         // YYYY/MM/DD or YYYY-MM-DD
-        var m = val.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
+        var m = val.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
         if (m) return m[1] + '-' + ('0'+m[2]).slice(-2) + '-' + ('0'+m[3]).slice(-2);
         // YYYYMMDD
         m = val.match(/^(\d{4})(\d{2})(\d{2})$/);
         if (m) return m[1] + '-' + m[2] + '-' + m[3];
-        // MM/DD/YYYY
-        m = val.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-        if (m) return m[3] + '-' + ('0'+m[1]).slice(-2) + '-' + ('0'+m[2]).slice(-2);
-        // YYMMDD (6桁)
-        m = val.match(/^(\d{2})(\d{2})(\d{2})$/);
-        if (m) { var yy = parseInt(m[1]); return (yy >= 50 ? 1900+yy : 2000+yy) + '-' + m[2] + '-' + m[3]; }
         return val;
     }
 
