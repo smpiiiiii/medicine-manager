@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -202,11 +202,9 @@
 <div class="content">
     <!-- ===== ホーム画面（クリニック選択） ===== -->
     <div id="topView">
-        <!-- 系列グループダッシュボードボタン -->
+        <!-- 系列グループダッシュボード一覧 -->
         <div id="groupDashSection" class="hidden" style="margin-bottom:10px;">
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button class="dash-btn" id="openDashBtn" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;flex:1;">📊 系列在庫ダッシュボード</button>
-            </div>
+            <div id="groupDashList"></div>
         </div>
 
         <!-- クリニック一覧 -->
@@ -226,8 +224,11 @@
         <!-- 系列グループ管理 -->
         <div class="card">
             <h3>🏢 系列グループ管理</h3>
-            <div id="groupInfo" style="margin-bottom:8px;"></div>
-            <div id="groupActions"></div>
+            <div id="groupListSection"></div>
+            <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+                <button class="btn btn-primary" style="flex:1;font-size:12px;padding:8px;" onclick="createGroup()">✨ グループ作成</button>
+                <button class="btn btn-outline" style="flex:1;font-size:12px;padding:8px;" onclick="joinGroup()">🔗 IDで参加</button>
+            </div>
         </div>
 
         <!-- 共有参加 -->
@@ -801,127 +802,123 @@
         }
     }
 
-    // === 系列グループ管理 ===
+    // === 系列グループ管理（複数グループ対応） ===
     var currentGroupId = null;
-    try { currentGroupId = localStorage.getItem('med_groupId') || null; } catch(e) {}
+    function getGroupIds() {
+        try {
+            var ids = JSON.parse(localStorage.getItem('med_groupIds') || '[]');
+            var oldId = localStorage.getItem('med_groupId');
+            if (oldId && ids.indexOf(oldId) === -1) {
+                ids.push(oldId);
+                localStorage.setItem('med_groupIds', JSON.stringify(ids));
+                localStorage.removeItem('med_groupId');
+            }
+            return ids;
+        } catch(e) { return []; }
+    }
+    function saveGroupIds(ids) { try { localStorage.setItem('med_groupIds', JSON.stringify(ids)); } catch(e) {} }
+    function addGroupId(gid) { var ids = getGroupIds(); if (ids.indexOf(gid) === -1) { ids.push(gid); saveGroupIds(ids); } }
+    function removeGroupId(gid) { saveGroupIds(getGroupIds().filter(function(id) { return id !== gid; })); }
 
     function renderGroupSection() {
-        var infoEl = document.getElementById('groupInfo');
-        var actionsEl = document.getElementById('groupActions');
         var dashSection = document.getElementById('groupDashSection');
-        if (!infoEl || !actionsEl) return;
-
-        if (currentGroupId) {
-            // グループ情報を取得して表示
-            apiCall('GET', '/api/group/' + currentGroupId, null, function(st, group) {
-                if (st === 200 && group) {
-                    dashSection.classList.remove('hidden');
-                    infoEl.innerHTML = '<div style="font-size:13px;color:#a78bfa;font-weight:900;margin-bottom:6px;">🏢 ' + group.name + '</div>' +
-                        '<div style="font-size:11px;color:#64748b;">参加クリニック: ' + (group.roomIds || []).length + '件</div>' +
-                        '<div style="font-size:10px;color:#475569;margin-top:4px;">グループID: <span style="font-family:monospace;color:#94a3b8;cursor:pointer;" onclick="copyGroupId()">' + currentGroupId + '</span> 📋</div>';
-                    // 未参加のクリニックがあれば追加ボタンを表示
-                    var history = getHistory();
-                    var notJoined = history.filter(function(h) { return !(group.roomIds || []).includes(h.id); });
-                    var html = '';
-                    if (notJoined.length > 0) {
-                        html += '<div style="font-size:11px;color:#94a3b8;margin-top:8px;margin-bottom:4px;">未参加のクリニックを追加:</div>';
-                        for (var nj = 0; nj < notJoined.length; nj++) {
-                            html += '<button class="btn-sm" onclick="addRoomToGroup(\'' + notJoined[nj].id + '\')" style="margin:2px 4px 2px 0;padding:4px 10px;background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);border-radius:6px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer;">' + notJoined[nj].name + ' を追加</button>';
-                        }
-                    }
-                    html += '<button class="btn btn-outline" style="margin-top:8px;font-size:11px;padding:6px 12px;" onclick="leaveGroup()">グループから離脱</button>';
-                    actionsEl.innerHTML = html;
-                } else if (st === 404) {
-                    // グループが削除された場合のみリセット
-                    currentGroupId = null;
-                    try { localStorage.removeItem('med_groupId'); } catch(e) {}
-                    renderGroupSection();
-                } else {
-                    // ネットワークエラー等：ダッシュボードボタンは表示したまま
-                    dashSection.classList.remove('hidden');
-                    infoEl.innerHTML = '<div style="font-size:12px;color:#f59e0b;">⚠️ グループ情報の取得に失敗しました（ダッシュボードは利用可能）</div>';
-                    actionsEl.innerHTML = '<button class="btn btn-outline" style="margin-top:8px;font-size:11px;padding:6px 12px;" onclick="renderGroupSection()">🔄 再読み込み</button>' +
-                        '<button class="btn btn-outline" style="margin-top:8px;font-size:11px;padding:6px 12px;margin-left:6px;" onclick="leaveGroup()">グループから離脱</button>';
-                }
-            });
-        } else {
+        var dashList = document.getElementById('groupDashList');
+        var listSection = document.getElementById('groupListSection');
+        if (!dashList || !listSection) return;
+        var groupIds = getGroupIds();
+        if (groupIds.length === 0) {
             dashSection.classList.add('hidden');
-            infoEl.innerHTML = '<div style="font-size:12px;color:#64748b;line-height:1.6;">系列のクリニック間で在庫を横断的に確認できます。<br>グループを作成するか、既存のグループIDで参加してください。</div>';
-            actionsEl.innerHTML =
-                '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">' +
-                '<button class="btn btn-primary" style="flex:1;font-size:12px;padding:8px;" onclick="createGroup()">✨ グループ作成</button>' +
-                '<button class="btn btn-outline" style="flex:1;font-size:12px;padding:8px;" onclick="joinGroup()">🔗 IDで参加</button>' +
-                '</div>';
+            listSection.innerHTML = '<div style="font-size:12px;color:#64748b;line-height:1.6;">系列のクリニック間で在庫を横断的に確認できます。<br>グループを作成するか、既存のグループIDで参加してください。</div>';
+            return;
+        }
+        dashSection.classList.remove('hidden');
+        dashList.innerHTML = '';
+        listSection.innerHTML = '';
+        for (var gi = 0; gi < groupIds.length; gi++) {
+            (function(gid) {
+                apiCall('GET', '/api/group/' + gid, null, function(st, group) {
+                    if (st === 200 && group) {
+                        var btn = document.createElement('button');
+                        btn.style.cssText = 'background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;width:100%;margin-bottom:6px;padding:12px;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;';
+                        btn.innerHTML = '<span>\ud83d\udcca ' + group.name + '</span><span style="font-size:11px;opacity:0.7;">' + (group.roomIds || []).length + '\u9662</span>';
+                        btn.addEventListener('click', function() { openDashboard(gid); });
+                        dashList.appendChild(btn);
+                        var card = document.createElement('div');
+                        card.style.cssText = 'padding:10px;background:#0f172a;border:1px solid #334155;border-radius:10px;margin-bottom:8px;';
+                        card.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div style="font-size:13px;color:#a78bfa;font-weight:900;">\ud83c\udfe2 ' + group.name + '</div><span style="font-size:10px;color:#64748b;">' + (group.roomIds||[]).length + '\u9662</span></div>' +
+                            '<div style="font-size:10px;color:#475569;">ID: <span style="font-family:monospace;color:#94a3b8;cursor:pointer;" onclick="copyGid(\'' + gid + '\')">' + gid + '</span> \ud83d\udccb</div>' +
+                            '<div style="display:flex;gap:4px;margin-top:6px;"><button class="btn btn-outline" style="font-size:10px;padding:4px 8px;" onclick="manageGroupClinics(\'' + gid + '\')">\ud83c\udfe5 \u30af\u30ea\u30cb\u30c3\u30af\u7ba1\u7406</button><button class="btn btn-outline" style="font-size:10px;padding:4px 8px;color:#f87171;border-color:#f87171;" onclick="leaveGroup(\'' + gid + '\')">\u96e2\u8131</button></div>';
+                        listSection.appendChild(card);
+                    } else if (st === 404) { removeGroupId(gid); }
+                });
+            })(groupIds[gi]);
         }
     }
     window.createGroup = function() {
-        var name = prompt('系列グループ名を入力してください\n（例: ○○医療グループ）');
+        var name = prompt('\u7cfb\u5217\u30b0\u30eb\u30fc\u30d7\u540d\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044\n\uff08\u4f8b: \u25cb\u25cb\u533b\u7642\u30b0\u30eb\u30fc\u30d7\uff09');
         if (!name || !name.trim()) return;
         apiCall('POST', '/api/group/create', { name: name.trim(), createdBy: myName }, function(st, data) {
             if (st === 200 && data) {
-                currentGroupId = data.groupId;
-                try { localStorage.setItem('med_groupId', currentGroupId); } catch(e) {}
-                showToast('✅ グループ「' + name.trim() + '」を作成しました');
-                // 訪問済みクリニックを全部追加するか聞く
+                addGroupId(data.groupId);
+                showToast('\u2705 \u30b0\u30eb\u30fc\u30d7\u300c' + name.trim() + '\u300d\u3092\u4f5c\u6210\u3057\u307e\u3057\u305f');
                 var history = getHistory();
-                if (history.length > 0 && confirm('登録済みの' + history.length + '件のクリニックをグループに追加しますか？')) {
-                    var added = 0;
+                if (history.length > 0 && confirm('\u767b\u9332\u6e08\u307f\u306e' + history.length + '\u4ef6\u306e\u30af\u30ea\u30cb\u30c3\u30af\u3092\u30b0\u30eb\u30fc\u30d7\u306b\u8ffd\u52a0\u3057\u307e\u3059\u304b\uff1f')) {
                     for (var i = 0; i < history.length; i++) {
-                        (function(rid) {
-                            apiCall('POST', '/api/group/' + currentGroupId + '/add-room', { roomId: rid }, function() { added++; if (added >= history.length) renderGroupSection(); });
-                        })(history[i].id);
+                        apiCall('POST', '/api/group/' + data.groupId + '/add-room', { roomId: history[i].id }, function() {});
                     }
-                } else {
-                    renderGroupSection();
                 }
-            } else {
-                alert('グループ作成に失敗しました');
-            }
+                setTimeout(renderGroupSection, 600);
+            } else { alert('\u30b0\u30eb\u30fc\u30d7\u4f5c\u6210\u306b\u5931\u6557\u3057\u307e\u3057\u305f'); }
         });
     };
     window.joinGroup = function() {
-        var gid = prompt('参加するグループIDを入力してください');
+        var gid = prompt('\u53c2\u52a0\u3059\u308b\u30b0\u30eb\u30fc\u30d7ID\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044');
         if (!gid || !gid.trim()) return;
         apiCall('GET', '/api/group/' + gid.trim(), null, function(st, data) {
             if (st === 200 && data) {
-                currentGroupId = gid.trim();
-                try { localStorage.setItem('med_groupId', currentGroupId); } catch(e) {}
-                showToast('✅ グループ「' + data.name + '」に参加しました');
-                // 訪問済みクリニックを追加するか聞く
+                addGroupId(gid.trim());
+                showToast('\u2705 \u30b0\u30eb\u30fc\u30d7\u300c' + data.name + '\u300d\u306b\u53c2\u52a0\u3057\u307e\u3057\u305f');
                 var history = getHistory();
                 var notJoined = history.filter(function(h) { return !(data.roomIds || []).includes(h.id); });
-                if (notJoined.length > 0 && confirm(notJoined.length + '件のクリニックをグループに追加しますか？')) {
+                if (notJoined.length > 0 && confirm(notJoined.length + '\u4ef6\u306e\u30af\u30ea\u30cb\u30c3\u30af\u3092\u30b0\u30eb\u30fc\u30d7\u306b\u8ffd\u52a0\u3057\u307e\u3059\u304b\uff1f')) {
                     for (var i = 0; i < notJoined.length; i++) {
-                        apiCall('POST', '/api/group/' + currentGroupId + '/add-room', { roomId: notJoined[i].id }, function() {});
+                        apiCall('POST', '/api/group/' + gid.trim() + '/add-room', { roomId: notJoined[i].id }, function() {});
                     }
                 }
-                setTimeout(renderGroupSection, 500);
-            } else {
-                alert('グループが見つかりません。IDを確認してください。');
-            }
+                setTimeout(renderGroupSection, 600);
+            } else { alert('\u30b0\u30eb\u30fc\u30d7\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3002ID\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002'); }
         });
     };
-    window.addRoomToGroup = function(rid) {
-        if (!currentGroupId) return;
-        apiCall('POST', '/api/group/' + currentGroupId + '/add-room', { roomId: rid }, function(st) {
-            if (st === 200) {
-                showToast('✅ グループに追加しました');
-                renderGroupSection();
-            }
-        });
-    };
-    window.leaveGroup = function() {
-        if (!confirm('グループから離脱しますか？（グループ自体は残ります）')) return;
-        currentGroupId = null;
-        try { localStorage.removeItem('med_groupId'); } catch(e) {}
-        showToast('グループから離脱しました');
+    window.leaveGroup = function(gid) {
+        if (!confirm('\u3053\u306e\u30b0\u30eb\u30fc\u30d7\u304b\u3089\u96e2\u8131\u3057\u307e\u3059\u304b\uff1f')) return;
+        removeGroupId(gid);
+        showToast('\u30b0\u30eb\u30fc\u30d7\u304b\u3089\u96e2\u8131\u3057\u307e\u3057\u305f');
         renderGroupSection();
     };
-    window.copyGroupId = function() {
-        if (!currentGroupId) return;
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(currentGroupId).then(function() { showToast('📋 グループIDをコピーしました'); });
-        }
+    window.copyGid = function(gid) {
+        if (navigator.clipboard) { navigator.clipboard.writeText(gid).then(function() { showToast('\ud83d\udccb \u30b0\u30eb\u30fc\u30d7ID\u3092\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f'); }); }
+    };
+    window.manageGroupClinics = function(gid) {
+        apiCall('GET', '/api/group/' + gid, null, function(st, group) {
+            if (st !== 200 || !group) return;
+            var history = getHistory();
+            var notJoined = history.filter(function(h) { return !(group.roomIds || []).includes(h.id); });
+            if (notJoined.length === 0) { showToast('\u8ffd\u52a0\u53ef\u80fd\u306a\u30af\u30ea\u30cb\u30c3\u30af\u306f\u3042\u308a\u307e\u305b\u3093'); return; }
+            var msg = '\u8ffd\u52a0\u3059\u308b\u30af\u30ea\u30cb\u30c3\u30af\u3092\u9078\u629e:\n';
+            for (var i = 0; i < notJoined.length; i++) msg += (i+1) + '. ' + notJoined[i].name + '\n';
+            msg += '\n\u756a\u53f7\u3092\u5165\u529b\uff08\u30ab\u30f3\u30de\u533a\u5207\u308a\u3067\u8907\u6570\u53ef\uff09';
+            var input = prompt(msg);
+            if (!input) return;
+            var nums = input.split(/[,\u3001\s]+/);
+            for (var n = 0; n < nums.length; n++) {
+                var idx = parseInt(nums[n]) - 1;
+                if (idx >= 0 && idx < notJoined.length) {
+                    apiCall('POST', '/api/group/' + gid + '/add-room', { roomId: notJoined[idx].id }, function() {});
+                }
+            }
+            setTimeout(renderGroupSection, 500);
+            showToast('\u2705 \u30af\u30ea\u30cb\u30c3\u30af\u3092\u8ffd\u52a0\u3057\u307e\u3057\u305f');
+        });
     };
 
     // === ダッシュボード ===
@@ -931,18 +928,19 @@
     var dashStatusFilter = 'all';
     var dashSortMode = 'expiry';
 
-    document.getElementById('openDashBtn').addEventListener('click', function() {
-        if (!currentGroupId) return;
+    window.openDashboard = function(gid) {
+        currentGroupId = gid;
         document.getElementById('topView').classList.add('hidden');
         document.getElementById('dashView').classList.remove('hidden');
-        document.getElementById('headerTitle').textContent = '📊 系列在庫ダッシュボード';
+        document.getElementById('headerTitle').textContent = '\ud83d\udcca \u7cfb\u5217\u5728\u5eab\u30c0\u30c3\u30b7\u30e5\u30dc\u30fc\u30c9';
         loadDashboard();
-    });
+    };
     document.getElementById('backFromDash').addEventListener('click', function() {
         document.getElementById('dashView').classList.add('hidden');
         document.getElementById('topView').classList.remove('hidden');
-        document.getElementById('headerTitle').textContent = '💊 薬剤在庫マネージャー';
+        document.getElementById('headerTitle').textContent = '\ud83d\udc8a \u85ac\u5264\u5728\u5eab\u30de\u30cd\u30fc\u30b8\u30e3\u30fc';
     });
+
     document.getElementById('dashSearch').addEventListener('input', function() {
         dashSearch = this.value.trim();
         renderDashboard();
