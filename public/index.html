@@ -167,6 +167,24 @@
         /* 自動リロードインジケーター */
         .auto-reload-badge { position: fixed; top: 8px; right: 8px; background: rgba(16,185,129,.9); color: #fff; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 12px; z-index: 150; opacity: 0; transition: opacity .3s; pointer-events: none; }
         .auto-reload-badge.show { opacity: 1; }
+
+        /* ダッシュボード */
+        .dash-card { background: #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 1px solid #334155; }
+        .dash-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .dash-card-name { font-size: 14px; font-weight: 900; color: #f1f5f9; flex: 1; }
+        .dash-card-unit { font-size: 11px; color: #64748b; }
+        .dash-card-cat { font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: 700; background: rgba(139,92,246,.15); color: #a78bfa; }
+        .dash-clinic-row { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 6px 8px; margin-bottom: 3px; background: rgba(15,23,42,.5); border-radius: 8px; border: 1px solid #1e293b; cursor: pointer; transition: all .15s; }
+        .dash-clinic-row:hover { border-color: #0ea5e9; background: rgba(14,165,233,.05); }
+        .dash-clinic-name { font-weight: 700; color: #94a3b8; min-width: 80px; font-size: 11px; }
+        .dash-clinic-qty { font-weight: 900; color: #f1f5f9; min-width: 50px; }
+        .dash-clinic-exp { color: #e2e8f0; font-size: 11px; min-width: 75px; }
+        .dash-clinic-status { font-size: 10px; font-weight: 700; }
+        .dash-summary { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+        .dash-summary-item { font-size: 12px; padding: 6px 12px; border-radius: 10px; font-weight: 700; background: #0f172a; border: 1px solid #334155; }
+        .dash-btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; font-family: inherit; transition: all .2s; }
+        .dash-btn:active { transform: scale(.97); }
+        .group-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; background: rgba(139,92,246,.15); color: #a78bfa; margin-left: 4px; }
     </style>
 </head>
 <body>
@@ -184,6 +202,13 @@
 <div class="content">
     <!-- ===== ホーム画面（クリニック選択） ===== -->
     <div id="topView">
+        <!-- 系列グループダッシュボードボタン -->
+        <div id="groupDashSection" class="hidden" style="margin-bottom:10px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="dash-btn" id="openDashBtn" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;flex:1;">📊 系列在庫ダッシュボード</button>
+            </div>
+        </div>
+
         <!-- クリニック一覧 -->
         <div id="historySection" class="card hidden">
             <h3>🏥 クリニックを選択</h3>
@@ -198,12 +223,59 @@
             <button class="btn btn-primary" id="createRoomBtn">✅ 作成する</button>
         </div>
 
+        <!-- 系列グループ管理 -->
+        <div class="card">
+            <h3>🏢 系列グループ管理</h3>
+            <div id="groupInfo" style="margin-bottom:8px;"></div>
+            <div id="groupActions"></div>
+        </div>
+
         <!-- 共有参加 -->
         <div class="card">
             <h3>🔗 共有URLで参加</h3>
             <div style="font-size:12px;color:#64748b;line-height:1.6;">
                 仲間から共有されたURLにアクセスしてください。
             </div>
+        </div>
+    </div>
+
+    <!-- ===== ダッシュボード画面 ===== -->
+    <div id="dashView" class="hidden">
+        <button class="btn btn-outline" id="backFromDash" style="margin-bottom:12px;">← クリニック一覧へ戻る</button>
+        <div style="text-align:center;margin-bottom:12px;">
+            <div style="font-size:16px;font-weight:900;color:#a78bfa;">📊 <span id="dashGroupName">系列在庫ダッシュボード</span></div>
+            <div id="dashClinicList" style="font-size:11px;color:#64748b;margin-top:4px;"></div>
+        </div>
+        <div id="dashSummary" class="dash-summary"></div>
+        <!-- 検索 -->
+        <div class="search-box" style="margin-bottom:8px;">
+            <input type="text" id="dashSearch" placeholder="薬剤名で横断検索...">
+        </div>
+        <!-- カテゴリフィルター -->
+        <div class="filter-tabs" id="dashCatTabs" style="margin-bottom:8px;">
+            <div class="filter-tab active" data-cat="all">全カテゴリ</div>
+        </div>
+        <!-- ステータスフィルター -->
+        <div class="filter-tabs" id="dashStatusTabs" style="margin-bottom:8px;">
+            <div class="filter-tab active" data-st="all">すべて</div>
+            <div class="filter-tab" data-st="danger">🔴 期限切れ</div>
+            <div class="filter-tab" data-st="warn">🟡 1ヶ月以内</div>
+            <div class="filter-tab" data-st="out">⬛ 在庫切れ</div>
+        </div>
+        <!-- ソート -->
+        <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;color:#94a3b8;font-weight:700;">並び替え:</span>
+            <select id="dashSort" style="flex:1;padding:6px 10px;border-radius:8px;border:1.5px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;font-weight:600;">
+                <option value="expiry">⏰ 期限が近い順</option>
+                <option value="name">🅰 あいうえお順</option>
+                <option value="qty">📦 数量が少ない順</option>
+            </select>
+        </div>
+        <!-- 薬剤リスト -->
+        <div id="dashMedList"></div>
+        <div id="dashEmpty" class="empty hidden">
+            <div class="emoji">📊</div>
+            <div class="text">ダッシュボードに表示するデータがありません</div>
         </div>
     </div>
 
@@ -599,7 +671,7 @@
     function formatDate(dateStr) {
         if (!dateStr) return '-';
         var d = new Date(dateStr);
-        return (d.getMonth()+1) + '/' + d.getDate();
+        return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate();
     }
 
     // === 履歴管理 ===
@@ -671,23 +743,38 @@
                     e.preventDefault();
                     e.stopPropagation();
                     // まずルーム情報を取得して管理人かチェック
-                    apiCall('GET', '/api/room/' + h.id, null, function(st, rd) {
+                    apiCall('GET', '/api/room/' + h.id + '?deviceId=' + encodeURIComponent(deviceId), null, function(st, rd) {
                         if (st === 200 && rd) {
                             if (typeof rd === 'string') rd = JSON.parse(rd);
-                            var isAdmin = rd.admin === myName;
+                            // 管理人判定: myName一致 or ルーム別名前一致 or deviceIdで紐付いたメンバー名がadmin一致
+                            var roomName = '';
+                            try { roomName = localStorage.getItem('med_name_' + h.id) || ''; } catch(e) {}
+                            var isAdmin = rd.admin === myName || (roomName && rd.admin === roomName);
+                            if (!isAdmin && Array.isArray(rd.members)) {
+                                var myMember = rd.members.find(function(m) { return m.deviceId === deviceId; });
+                                if (myMember && myMember.name === rd.admin) isAdmin = true;
+                            }
                             if (isAdmin) {
-                                // 管理人: サーバーデータも完全削除
-                                if (confirm('管理人として「' + h.name + '」を完全に削除しますか？\n（全データが消えます）')) {
-                                    apiCall('POST', '/api/room/' + h.id + '/delete-room', { requestBy: myName }, function(ds, dd) {
-                                        if (ds === 200) {
-                                            removeFromHistory(h.id);
-                                            renderHistory();
-                                            showToast('🗑 クリニックを完全に削除しました');
-                                        } else {
-                                            alert('削除に失敗しました: ' + (dd ? dd.error : ''));
-                                        }
-                                    });
+                                // === 管理人: 二重確認で完全削除 ===
+                                // 1回目: 基本確認
+                                var first = confirm('⚠️ 管理人として「' + h.name + '」を完全に削除しますか？\n\nこの操作は取り消せません。\n全スタッフのデータも消えます。');
+                                if (!first) return;
+                                // 2回目: 最終確認（クリニック名を入力させる）
+                                var inputName = prompt('本当に完全削除しますか？\n\n確認のためクリニック名「' + h.name + '」を入力してください:');
+                                if (inputName === null) return;
+                                if (inputName.trim() !== h.name.trim()) {
+                                    alert('入力された名前が一致しません。削除を中止しました。');
+                                    return;
                                 }
+                                apiCall('POST', '/api/room/' + h.id + '/delete-room', { requestBy: rd.admin }, function(ds, dd) {
+                                    if (ds === 200) {
+                                        removeFromHistory(h.id);
+                                        renderHistory();
+                                        showToast('🗑 クリニックを完全に削除しました');
+                                    } else {
+                                        alert('削除に失敗しました: ' + (dd ? dd.error : ''));
+                                    }
+                                });
                             } else {
                                 // スタッフ: リストから非表示のみ
                                 if (confirm('「' + h.name + '」をリストから削除しますか？\n（クリニック自体は残ります）')) {
@@ -714,6 +801,305 @@
         }
     }
 
+    // === 系列グループ管理 ===
+    var currentGroupId = null;
+    try { currentGroupId = localStorage.getItem('med_groupId') || null; } catch(e) {}
+
+    function renderGroupSection() {
+        var infoEl = document.getElementById('groupInfo');
+        var actionsEl = document.getElementById('groupActions');
+        var dashSection = document.getElementById('groupDashSection');
+        if (!infoEl || !actionsEl) return;
+
+        if (currentGroupId) {
+            // グループ情報を取得して表示
+            apiCall('GET', '/api/group/' + currentGroupId, null, function(st, group) {
+                if (st === 200 && group) {
+                    dashSection.classList.remove('hidden');
+                    infoEl.innerHTML = '<div style="font-size:13px;color:#a78bfa;font-weight:900;margin-bottom:6px;">🏢 ' + group.name + '</div>' +
+                        '<div style="font-size:11px;color:#64748b;">参加クリニック: ' + (group.roomIds || []).length + '件</div>' +
+                        '<div style="font-size:10px;color:#475569;margin-top:4px;">グループID: <span style="font-family:monospace;color:#94a3b8;cursor:pointer;" onclick="copyGroupId()">' + currentGroupId + '</span> 📋</div>';
+                    // 未参加のクリニックがあれば追加ボタンを表示
+                    var history = getHistory();
+                    var notJoined = history.filter(function(h) { return !(group.roomIds || []).includes(h.id); });
+                    var html = '';
+                    if (notJoined.length > 0) {
+                        html += '<div style="font-size:11px;color:#94a3b8;margin-top:8px;margin-bottom:4px;">未参加のクリニックを追加:</div>';
+                        for (var nj = 0; nj < notJoined.length; nj++) {
+                            html += '<button class="btn-sm" onclick="addRoomToGroup(\'' + notJoined[nj].id + '\')" style="margin:2px 4px 2px 0;padding:4px 10px;background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);border-radius:6px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer;">' + notJoined[nj].name + ' を追加</button>';
+                        }
+                    }
+                    html += '<button class="btn btn-outline" style="margin-top:8px;font-size:11px;padding:6px 12px;" onclick="leaveGroup()">グループから離脱</button>';
+                    actionsEl.innerHTML = html;
+                } else if (st === 404) {
+                    // グループが削除された場合のみリセット
+                    currentGroupId = null;
+                    try { localStorage.removeItem('med_groupId'); } catch(e) {}
+                    renderGroupSection();
+                } else {
+                    // ネットワークエラー等：ダッシュボードボタンは表示したまま
+                    dashSection.classList.remove('hidden');
+                    infoEl.innerHTML = '<div style="font-size:12px;color:#f59e0b;">⚠️ グループ情報の取得に失敗しました（ダッシュボードは利用可能）</div>';
+                    actionsEl.innerHTML = '<button class="btn btn-outline" style="margin-top:8px;font-size:11px;padding:6px 12px;" onclick="renderGroupSection()">🔄 再読み込み</button>' +
+                        '<button class="btn btn-outline" style="margin-top:8px;font-size:11px;padding:6px 12px;margin-left:6px;" onclick="leaveGroup()">グループから離脱</button>';
+                }
+            });
+        } else {
+            dashSection.classList.add('hidden');
+            infoEl.innerHTML = '<div style="font-size:12px;color:#64748b;line-height:1.6;">系列のクリニック間で在庫を横断的に確認できます。<br>グループを作成するか、既存のグループIDで参加してください。</div>';
+            actionsEl.innerHTML =
+                '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">' +
+                '<button class="btn btn-primary" style="flex:1;font-size:12px;padding:8px;" onclick="createGroup()">✨ グループ作成</button>' +
+                '<button class="btn btn-outline" style="flex:1;font-size:12px;padding:8px;" onclick="joinGroup()">🔗 IDで参加</button>' +
+                '</div>';
+        }
+    }
+    window.createGroup = function() {
+        var name = prompt('系列グループ名を入力してください\n（例: ○○医療グループ）');
+        if (!name || !name.trim()) return;
+        apiCall('POST', '/api/group/create', { name: name.trim(), createdBy: myName }, function(st, data) {
+            if (st === 200 && data) {
+                currentGroupId = data.groupId;
+                try { localStorage.setItem('med_groupId', currentGroupId); } catch(e) {}
+                showToast('✅ グループ「' + name.trim() + '」を作成しました');
+                // 訪問済みクリニックを全部追加するか聞く
+                var history = getHistory();
+                if (history.length > 0 && confirm('登録済みの' + history.length + '件のクリニックをグループに追加しますか？')) {
+                    var added = 0;
+                    for (var i = 0; i < history.length; i++) {
+                        (function(rid) {
+                            apiCall('POST', '/api/group/' + currentGroupId + '/add-room', { roomId: rid }, function() { added++; if (added >= history.length) renderGroupSection(); });
+                        })(history[i].id);
+                    }
+                } else {
+                    renderGroupSection();
+                }
+            } else {
+                alert('グループ作成に失敗しました');
+            }
+        });
+    };
+    window.joinGroup = function() {
+        var gid = prompt('参加するグループIDを入力してください');
+        if (!gid || !gid.trim()) return;
+        apiCall('GET', '/api/group/' + gid.trim(), null, function(st, data) {
+            if (st === 200 && data) {
+                currentGroupId = gid.trim();
+                try { localStorage.setItem('med_groupId', currentGroupId); } catch(e) {}
+                showToast('✅ グループ「' + data.name + '」に参加しました');
+                // 訪問済みクリニックを追加するか聞く
+                var history = getHistory();
+                var notJoined = history.filter(function(h) { return !(data.roomIds || []).includes(h.id); });
+                if (notJoined.length > 0 && confirm(notJoined.length + '件のクリニックをグループに追加しますか？')) {
+                    for (var i = 0; i < notJoined.length; i++) {
+                        apiCall('POST', '/api/group/' + currentGroupId + '/add-room', { roomId: notJoined[i].id }, function() {});
+                    }
+                }
+                setTimeout(renderGroupSection, 500);
+            } else {
+                alert('グループが見つかりません。IDを確認してください。');
+            }
+        });
+    };
+    window.addRoomToGroup = function(rid) {
+        if (!currentGroupId) return;
+        apiCall('POST', '/api/group/' + currentGroupId + '/add-room', { roomId: rid }, function(st) {
+            if (st === 200) {
+                showToast('✅ グループに追加しました');
+                renderGroupSection();
+            }
+        });
+    };
+    window.leaveGroup = function() {
+        if (!confirm('グループから離脱しますか？（グループ自体は残ります）')) return;
+        currentGroupId = null;
+        try { localStorage.removeItem('med_groupId'); } catch(e) {}
+        showToast('グループから離脱しました');
+        renderGroupSection();
+    };
+    window.copyGroupId = function() {
+        if (!currentGroupId) return;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(currentGroupId).then(function() { showToast('📋 グループIDをコピーしました'); });
+        }
+    };
+
+    // === ダッシュボード ===
+    var dashData = null;
+    var dashSearch = '';
+    var dashCatFilter = 'all';
+    var dashStatusFilter = 'all';
+    var dashSortMode = 'expiry';
+
+    document.getElementById('openDashBtn').addEventListener('click', function() {
+        if (!currentGroupId) return;
+        document.getElementById('topView').classList.add('hidden');
+        document.getElementById('dashView').classList.remove('hidden');
+        document.getElementById('headerTitle').textContent = '📊 系列在庫ダッシュボード';
+        loadDashboard();
+    });
+    document.getElementById('backFromDash').addEventListener('click', function() {
+        document.getElementById('dashView').classList.add('hidden');
+        document.getElementById('topView').classList.remove('hidden');
+        document.getElementById('headerTitle').textContent = '💊 薬剤在庫マネージャー';
+    });
+    document.getElementById('dashSearch').addEventListener('input', function() {
+        dashSearch = this.value.trim();
+        renderDashboard();
+    });
+    document.getElementById('dashCatTabs').addEventListener('click', function(e) {
+        var tab = e.target.closest('.filter-tab');
+        if (!tab) return;
+        var tabs = this.querySelectorAll('.filter-tab');
+        for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+        tab.classList.add('active');
+        dashCatFilter = tab.getAttribute('data-cat');
+        renderDashboard();
+    });
+    document.getElementById('dashStatusTabs').addEventListener('click', function(e) {
+        var tab = e.target.closest('.filter-tab');
+        if (!tab) return;
+        var tabs = this.querySelectorAll('.filter-tab');
+        for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+        tab.classList.add('active');
+        dashStatusFilter = tab.getAttribute('data-st');
+        renderDashboard();
+    });
+    document.getElementById('dashSort').addEventListener('change', function() {
+        dashSortMode = this.value;
+        renderDashboard();
+    });
+
+    function loadDashboard() {
+        if (!currentGroupId) return;
+        apiCall('GET', '/api/group/' + currentGroupId + '/dashboard', null, function(st, data) {
+            if (st === 200 && data) {
+                dashData = data;
+                document.getElementById('dashGroupName').textContent = data.groupName || '系列在庫';
+                document.getElementById('dashClinicList').textContent = (data.clinics || []).map(function(c) { return '🏥 ' + c.name; }).join('　');
+                // カテゴリタブ生成
+                var cats = {};
+                for (var i = 0; i < data.medicines.length; i++) {
+                    var cat = data.medicines[i].category || '';
+                    if (cat) cats[cat] = true;
+                }
+                var catTabsEl = document.getElementById('dashCatTabs');
+                catTabsEl.innerHTML = '<div class="filter-tab active" data-cat="all">全カテゴリ</div>';
+                var catKeys = Object.keys(cats).sort();
+                for (var c = 0; c < catKeys.length; c++) {
+                    catTabsEl.innerHTML += '<div class="filter-tab" data-cat="' + catKeys[c] + '">' + catKeys[c] + '</div>';
+                }
+                renderDashboard();
+            } else {
+                alert('ダッシュボードの読み込みに失敗しました');
+            }
+        });
+    }
+
+    function renderDashboard() {
+        if (!dashData) return;
+        var list = document.getElementById('dashMedList');
+        var empty = document.getElementById('dashEmpty');
+        var summary = document.getElementById('dashSummary');
+        list.innerHTML = '';
+
+        var meds = dashData.medicines.slice();
+
+        // 検索
+        if (dashSearch) {
+            var q = dashSearch.toLowerCase();
+            meds = meds.filter(function(m) { return m.name.toLowerCase().indexOf(q) >= 0; });
+        }
+        // カテゴリフィルター
+        if (dashCatFilter !== 'all') {
+            meds = meds.filter(function(m) { return m.category === dashCatFilter; });
+        }
+        // ステータスフィルター：各薬剤のクリニック情報を評価
+        if (dashStatusFilter !== 'all') {
+            meds = meds.filter(function(m) {
+                return m.clinics.some(function(cl) {
+                    var s = getExpiryStatus(cl.expiryDate);
+                    if (dashStatusFilter === 'out') return cl.quantity === 0;
+                    return s.status === dashStatusFilter;
+                });
+            });
+        }
+        // ソート
+        meds.sort(function(a, b) {
+            if (dashSortMode === 'name') return a.name.localeCompare(b.name);
+            if (dashSortMode === 'qty') {
+                var aq = a.clinics.reduce(function(s, c) { return s + c.quantity; }, 0);
+                var bq = b.clinics.reduce(function(s, c) { return s + c.quantity; }, 0);
+                return aq - bq;
+            }
+            // expiry: 最も近い期限順
+            var ae = '9999'; var be = '9999';
+            for (var i = 0; i < a.clinics.length; i++) { if (a.clinics[i].expiryDate && a.clinics[i].expiryDate < ae) ae = a.clinics[i].expiryDate; }
+            for (var j = 0; j < b.clinics.length; j++) { if (b.clinics[j].expiryDate && b.clinics[j].expiryDate < be) be = b.clinics[j].expiryDate; }
+            return ae.localeCompare(be);
+        });
+
+        // サマリー
+        var totalMeds = dashData.medicines.length;
+        var dangerCount = 0; var warnCount = 0; var outCount = 0;
+        for (var si = 0; si < dashData.medicines.length; si++) {
+            for (var sj = 0; sj < dashData.medicines[si].clinics.length; sj++) {
+                var sc = dashData.medicines[si].clinics[sj];
+                var ss = getExpiryStatus(sc.expiryDate);
+                if (sc.quantity === 0) outCount++;
+                else if (ss.status === 'danger') dangerCount++;
+                else if (ss.status === 'warn') warnCount++;
+            }
+        }
+        summary.innerHTML =
+            '<div class="dash-summary-item" style="color:#f1f5f9;">💊 薬剤 <b>' + totalMeds + '</b>種</div>' +
+            '<div class="dash-summary-item" style="color:#f87171;">🔴 期限切れ <b>' + dangerCount + '</b></div>' +
+            '<div class="dash-summary-item" style="color:#fbbf24;">🟡 1ヶ月内 <b>' + warnCount + '</b></div>' +
+            '<div class="dash-summary-item" style="color:#9ca3af;">⬛ 在庫切れ <b>' + outCount + '</b></div>';
+
+        if (meds.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+
+        for (var mi = 0; mi < meds.length; mi++) {
+            var med = meds[mi];
+            var card = document.createElement('div');
+            card.className = 'dash-card';
+
+            // ヘッダー
+            var header = document.createElement('div');
+            header.className = 'dash-card-header';
+            header.innerHTML = '<span class="dash-card-name">💊 ' + med.name + '</span>' +
+                (med.category ? '<span class="dash-card-cat">' + med.category + '</span>' : '') +
+                '<span class="dash-card-unit">(' + med.unit + ')</span>';
+            card.appendChild(header);
+
+            // クリニック行
+            for (var ci = 0; ci < med.clinics.length; ci++) {
+                (function(cl) {
+                    var es = getExpiryStatus(cl.expiryDate);
+                    var isOut = cl.quantity === 0;
+                    var statusColor = isOut ? '#9ca3af' : (es.status === 'danger' ? '#f87171' : (es.status === 'warn' ? '#fbbf24' : '#34d399'));
+                    var statusIcon = isOut ? '⬛' : (es.status === 'danger' ? '🔴' : (es.status === 'warn' ? '🟡' : '🟢'));
+                    var row = document.createElement('div');
+                    row.className = 'dash-clinic-row';
+                    row.innerHTML =
+                        '<span class="dash-clinic-name">🏥 ' + cl.clinicName + '</span>' +
+                        '<span class="dash-clinic-qty" style="color:' + (isOut ? '#9ca3af' : '#f1f5f9') + '">' + cl.quantity + med.unit + '</span>' +
+                        '<span class="dash-clinic-exp">' + (cl.expiryDate ? formatDate(cl.expiryDate) : '-') + '</span>' +
+                        '<span class="dash-clinic-status" style="color:' + statusColor + '">' + statusIcon + ' ' + (isOut ? '在庫切れ' : es.label) + '</span>';
+                    row.addEventListener('click', function() {
+                        location.href = '/room/' + cl.clinicId;
+                    });
+                    card.appendChild(row);
+                })(med.clinics[ci]);
+            }
+            list.appendChild(card);
+        }
+    }
+
     // === 初期化 ===
     function init() {
 
@@ -730,6 +1116,7 @@
             loadRoom();
         } else {
             renderHistory();
+            renderGroupSection();
         }
         // Service Worker登録
         if ('serviceWorker' in navigator) {
@@ -1133,7 +1520,7 @@
             header.appendChild(actions);
             card.appendChild(header);
 
-            // ロット表示
+            // ロット表示（直接操作可能）
             if (Array.isArray(med.lots) && med.lots.length > 1) {
                 var lotDiv = document.createElement('div');
                 lotDiv.style.cssText = 'margin-top:6px;padding:6px 8px;background:rgba(14,165,233,.05);border-radius:8px;border:1px solid rgba(14,165,233,.1);';
@@ -1142,17 +1529,53 @@
                 lotTitle.textContent = '\ud83d\udce6 \u30ed\u30c3\u30c8\u5225 (' + med.lots.length + ')';
                 lotDiv.appendChild(lotTitle);
                 for (var li = 0; li < med.lots.length; li++) {
-                    var lot = med.lots[li];
-                    var ls = getExpiryStatus(lot.expiryDate);
-                    var lotRow = document.createElement('div');
-                    lotRow.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;padding:2px 0;';
-                    var lsColor = ls.status === 'danger' ? '#f87171' : (ls.status === 'warn' ? '#fbbf24' : '#34d399');
-                    lotRow.innerHTML = '<span style="color:' + lsColor + '">\u25cf</span> ' +
-                        '<span style="color:#e2e8f0">' + formatDate(lot.expiryDate) + '</span>' +
-                        '<span style="color:#94a3b8">\u2192</span>' +
-                        '<span style="font-weight:700;color:#f1f5f9">' + lot.quantity + (med.unit||'\u500b') + '</span>' +
-                        '<span style="font-size:9px;color:#64748b">' + ls.label + '</span>';
-                    lotDiv.appendChild(lotRow);
+                    (function(m, lot, lotIdx) {
+                        var ls = getExpiryStatus(lot.expiryDate);
+                        var lotRow = document.createElement('div');
+                        lotRow.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:11px;padding:3px 0;';
+                        var lsColor = ls.status === 'danger' ? '#f87171' : (ls.status === 'warn' ? '#fbbf24' : '#34d399');
+                        // 期限表示
+                        var dotSpan = document.createElement('span');
+                        dotSpan.style.cssText = 'color:' + lsColor + ';font-size:8px;';
+                        dotSpan.textContent = '\u25cf';
+                        var dateSpan = document.createElement('span');
+                        dateSpan.style.cssText = 'color:#e2e8f0;min-width:68px;font-size:11px;';
+                        dateSpan.textContent = formatDate(lot.expiryDate);
+                        var statusSpan = document.createElement('span');
+                        statusSpan.style.cssText = 'font-size:9px;color:#64748b;min-width:42px;';
+                        statusSpan.textContent = ls.label;
+                        // −ボタン
+                        var lotMinus = document.createElement('button');
+                        lotMinus.style.cssText = 'width:22px;height:22px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:5px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:auto;flex-shrink:0;';
+                        lotMinus.textContent = '\u2212';
+                        lotMinus.addEventListener('click', function(e) { e.stopPropagation(); adjustQty(m.mid, -1, lotIdx); });
+                        // 数量（タップで直接入力）
+                        var lotQtySpan = document.createElement('span');
+                        lotQtySpan.style.cssText = 'font-weight:700;color:#f1f5f9;min-width:32px;text-align:center;font-size:12px;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;';
+                        lotQtySpan.textContent = lot.quantity + (m.unit||'\u500b');
+                        lotQtySpan.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            var newVal = prompt(formatDate(lot.expiryDate) + ' のロット数量を入力', lot.quantity);
+                            if (newVal === null) return;
+                            var num = parseInt(newVal);
+                            if (isNaN(num) || num < 0) { alert('正しい数値を入力してください'); return; }
+                            var diff = num - lot.quantity;
+                            if (diff === 0) return;
+                            adjustQty(m.mid, diff, lotIdx);
+                        });
+                        // ＋ボタン
+                        var lotPlus = document.createElement('button');
+                        lotPlus.style.cssText = 'width:22px;height:22px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:5px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
+                        lotPlus.textContent = '\uff0b';
+                        lotPlus.addEventListener('click', function(e) { e.stopPropagation(); adjustQty(m.mid, 1, lotIdx); });
+                        lotRow.appendChild(dotSpan);
+                        lotRow.appendChild(dateSpan);
+                        lotRow.appendChild(statusSpan);
+                        lotRow.appendChild(lotMinus);
+                        lotRow.appendChild(lotQtySpan);
+                        lotRow.appendChild(lotPlus);
+                        lotDiv.appendChild(lotRow);
+                    })(med, med.lots[li], li);
                 }
                 card.appendChild(lotDiv);
             }
@@ -1249,12 +1672,14 @@
         container.appendChild(card);
     }
 
-    // === 数量増減 ===
-    function adjustQty(mid, delta) {
-        apiCall('POST', '/api/room/' + roomId + '/adjust', { mid: mid, delta: delta, updatedBy: myName }, function(status, data) {
+    // === 数量増減（lotIndex指定でロット別操作に対応） ===
+    function adjustQty(mid, delta, lotIndex) {
+        var payload = { mid: mid, delta: delta, updatedBy: myName };
+        if (lotIndex !== undefined && lotIndex >= 0) payload.lotIndex = lotIndex;
+        apiCall('POST', '/api/room/' + roomId + '/adjust', payload, function(status, data) {
             if (status === 200) {
                 loadRoom();
-                showToast(delta > 0 ? '＋1 追加しました' : '−1 使用しました');
+                showToast(delta > 0 ? '＋' + delta + ' 追加しました' : '−' + Math.abs(delta) + ' 使用しました');
             }
         });
     }
@@ -1510,6 +1935,17 @@
     });
 
     // === 編集モーダル ===
+    // ロット数量変更時に総数を自動計算する
+    function recalcTotalFromLots() {
+        var lotInputs = document.querySelectorAll('.edit-lot-qty');
+        if (lotInputs.length === 0) return;
+        var total = 0;
+        for (var i = 0; i < lotInputs.length; i++) {
+            total += parseInt(lotInputs[i].value) || 0;
+        }
+        document.getElementById('editQty').value = total;
+    }
+
     window.openEditModal = function(med) {
         document.getElementById('editModal').classList.add('show');
         document.getElementById('editMid').value = med.mid;
@@ -1521,21 +1957,59 @@
         document.getElementById('editCategory').value = med.category || '';
         document.getElementById('editBarcode').value = med.barcode || '';
         document.getElementById('editMemo').value = med.memo || '';
-        // ロット一覧表示
+        // ロット一覧表示（操作可能）
         var lotSection = document.getElementById('editLotSection');
         if (lotSection) {
             if (Array.isArray(med.lots) && med.lots.length > 0) {
-                var html = '<div style="font-size:12px;font-weight:900;color:#38bdf8;margin-bottom:6px;">📦 ロット一覧 (' + med.lots.length + ')</div>';
+                var unit = med.unit || '個';
+                var html = '<div style="font-size:12px;font-weight:900;color:#38bdf8;margin-bottom:6px;">📦 ロット別数量 (' + med.lots.length + ')</div>';
+                html += '<div style="font-size:10px;color:#64748b;margin-bottom:8px;">※ ロットの数量を変更すると総数に反映されます</div>';
                 for (var i = 0; i < med.lots.length; i++) {
                     var l = med.lots[i];
-                    html += '<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0;border-bottom:1px solid #334155;">';
-                    html += '<span style="color:#e2e8f0">' + formatDate(l.expiryDate) + '</span>';
-                    html += '<span style="font-weight:700;color:#f1f5f9">' + l.quantity + (med.unit||'個') + '</span>';
+                    var ls = getExpiryStatus(l.expiryDate);
+                    var lsColor = ls.status === 'danger' ? '#f87171' : (ls.status === 'warn' ? '#fbbf24' : '#34d399');
+                    html += '<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 8px;margin-bottom:4px;background:rgba(15,23,42,.5);border-radius:8px;border:1px solid #334155;">';
+                    html += '<span style="color:' + lsColor + ';font-size:8px;">●</span>';
+                    html += '<span style="color:#e2e8f0;min-width:80px;">' + formatDate(l.expiryDate) + '</span>';
+                    html += '<span style="font-size:10px;color:#64748b;min-width:55px;">' + ls.label + '</span>';
+                    html += '<div style="display:flex;align-items:center;gap:4px;margin-left:auto;">';
+                    html += '<button type="button" class="lot-adj-btn" data-lot="' + i + '" data-delta="-1" style="width:26px;height:26px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:6px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>';
+                    html += '<input type="number" class="edit-lot-qty" data-lot="' + i + '" value="' + l.quantity + '" inputmode="numeric" style="width:50px;text-align:center;padding:4px;border:1px solid #334155;border-radius:6px;background:#0f172a;color:#f1f5f9;font-size:13px;font-weight:700;">';
+                    html += '<button type="button" class="lot-adj-btn" data-lot="' + i + '" data-delta="1" style="width:26px;height:26px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:6px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">＋</button>';
+                    html += '<span style="font-size:11px;color:#94a3b8;min-width:20px;">' + unit + '</span>';
+                    html += '</div>';
                     html += '</div>';
                 }
                 lotSection.innerHTML = html;
+                // ロット数量入力のイベント設定
+                var lotQtyInputs = lotSection.querySelectorAll('.edit-lot-qty');
+                for (var j = 0; j < lotQtyInputs.length; j++) {
+                    lotQtyInputs[j].addEventListener('input', recalcTotalFromLots);
+                }
+                // ロット±ボタンのイベント設定
+                var lotAdjBtns = lotSection.querySelectorAll('.lot-adj-btn');
+                for (var k = 0; k < lotAdjBtns.length; k++) {
+                    lotAdjBtns[k].addEventListener('click', function() {
+                        var lotIdx = parseInt(this.getAttribute('data-lot'));
+                        var delta = parseInt(this.getAttribute('data-delta'));
+                        var input = lotSection.querySelector('.edit-lot-qty[data-lot="' + lotIdx + '"]');
+                        if (input) {
+                            var cur = parseInt(input.value) || 0;
+                            var newVal = Math.max(0, cur + delta);
+                            input.value = newVal;
+                            recalcTotalFromLots();
+                        }
+                    });
+                }
+                // 総数フィールドを読み取り専用に（ロットがある場合）
+                document.getElementById('editQty').readOnly = true;
+                document.getElementById('editQty').style.opacity = '0.6';
+                document.getElementById('editQty').title = 'ロット別数量から自動計算されます';
             } else {
                 lotSection.innerHTML = '';
+                document.getElementById('editQty').readOnly = false;
+                document.getElementById('editQty').style.opacity = '1';
+                document.getElementById('editQty').title = '';
             }
         }
     };
@@ -1546,6 +2020,20 @@
     // 保存
     document.getElementById('saveEditBtn').addEventListener('click', function() {
         var mid = document.getElementById('editMid').value;
+        // ロット別数量を収集
+        var lotInputs = document.querySelectorAll('.edit-lot-qty');
+        var lots = null;
+        if (lotInputs.length > 0) {
+            lots = [];
+            var med = roomData.medicines.find(function(m) { return m.mid === mid; });
+            for (var li = 0; li < lotInputs.length; li++) {
+                var lotIdx = parseInt(lotInputs[li].getAttribute('data-lot'));
+                var lotQty = parseInt(lotInputs[li].value) || 0;
+                if (med && Array.isArray(med.lots) && med.lots[lotIdx]) {
+                    lots.push({ expiryDate: med.lots[lotIdx].expiryDate, quantity: lotQty });
+                }
+            }
+        }
         var data = {
             mid: mid,
             name: document.getElementById('editName').value.trim(),
@@ -1557,6 +2045,7 @@
             barcode: document.getElementById('editBarcode').value.trim(),
             memo: document.getElementById('editMemo').value.trim(),
             updatedBy: myName,
+            lots: lots,
         };
         if (!data.name) { alert('薬剤名を入力してください'); return; }
 

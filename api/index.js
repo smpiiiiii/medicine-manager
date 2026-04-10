@@ -39,6 +39,15 @@ async function saveRoom(id, room) {
   await redis.set(`med:${id}`, JSON.stringify(room));
 }
 
+// グループデータの読み書き
+async function getGroup(id) {
+  const data = await redis.get(`med-group:${id}`);
+  return data || null;
+}
+async function saveGroup(id, group) {
+  await redis.set(`med-group:${id}`, JSON.stringify(group));
+}
+
 // メンバー追跡（deviceIdがあれば同一デバイスは1人として扱う）
 function trackMember(room, name, deviceId) {
   if (!name) return;
@@ -220,12 +229,24 @@ module.exports = async (req, res) => {
       if (!med) return res.status(404).json({ error: '薬剤が見つかりません' });
 
       if (body.name !== undefined) med.name = (body.name || '').trim();
-      if (body.quantity !== undefined) med.quantity = parseInt(body.quantity) || 0;
       if (body.unit !== undefined) med.unit = (body.unit || '個').trim();
       if (body.expiryDate !== undefined) med.expiryDate = body.expiryDate;
       if (body.location !== undefined) med.location = (body.location || '').trim();
       if (body.category !== undefined) med.category = (body.category || '').trim();
       if (body.memo !== undefined) med.memo = (body.memo || '').trim();
+
+      // ロット別数量の更新（フロントエンドからlots配列が送られた場合）
+      if (Array.isArray(body.lots)) {
+        med.lots = body.lots.filter(l => l.quantity > 0); // 0個のロットは削除
+        med.lots.sort((a, b) => (a.expiryDate || '9999').localeCompare(b.expiryDate || '9999'));
+        // 総数はロットの合計から自動計算
+        med.quantity = med.lots.reduce((s, l) => s + l.quantity, 0);
+        // 最も近い期限をメインに設定
+        med.expiryDate = med.lots.find(l => l.expiryDate)?.expiryDate || '';
+      } else if (body.quantity !== undefined) {
+        med.quantity = parseInt(body.quantity) || 0;
+      }
+
       med.updatedBy = (body.updatedBy || '').trim();
       med.updatedAt = new Date().toISOString();
 
@@ -365,6 +386,7 @@ module.exports = async (req, res) => {
           existing.quantity = existing.lots.reduce((s, l) => s + l.quantity, 0);
           existing.expiryDate = existing.lots.find(l => l.expiryDate)?.expiryDate || '';
           existing.updatedAt = new Date().toISOString();
+          existing.updatedBy = (body.addedBy || '').trim(); // インポート実行者を記録
           if (!existing.location && item.location) existing.location = item.location.trim();
           if (!existing.category && item.category) existing.category = item.category.trim();
           if (item.barcode && !existing.barcode) existing.barcode = item.barcode.trim();
@@ -517,6 +539,136 @@ module.exports = async (req, res) => {
       return res.status(200).json({
         publicKey: process.env.VAPID_PUBLIC_KEY || ''
       });
+    }
+
+    // === 系列グループ作成 ===
+    if (pathname === '/api/group/create' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const groupName = (body.name || '').trim();
+      if (!groupName) return res.status(400).json({ error: 'グループ名を入力してください' });
+      const groupId = crypto.randomBytes(4).toString('hex');
+      const group = {
+        id: groupId,
+        name: groupName,
+        roomIds: [],
+        createdBy: (body.createdBy || '').trim(),
+        created: new Date().toISOString(),
+      };
+      // ルームIDが指定されていたら即追加
+      if (body.roomId) {
+        group.roomIds.push(body.roomId);
+        let room = await getRoom(body.roomId);
+        if (room) {
+          if (typeof room === 'string') room = JSON.parse(room);
+          room.groupId = groupId;
+          room.groupName = groupName;
+          await saveRoom(body.roomId, room);
+        }
+      }
+      await saveGroup(groupId, group);
+      return res.status(200).json({ status: 'ok', groupId, group });
+    }
+
+    // === 系列グループにルーム追加 ===
+    if (pathname.match(/^\/api\/group\/[^/]+\/add-room$/) && req.method === 'POST') {
+      const groupId = pathname.split('/')[3];
+      const body = await parseBody(req);
+      const roomId = (body.roomId || '').trim();
+      if (!roomId) return res.status(400).json({ error: 'ルームIDを指定してください' });
+
+      let group = await getGroup(groupId);
+      if (!group) return res.status(404).json({ error: 'グループが見つかりません' });
+      if (typeof group === 'string') group = JSON.parse(group);
+
+      // 重複チェック
+      if (!group.roomIds.includes(roomId)) {
+        group.roomIds.push(roomId);
+        await saveGroup(groupId, group);
+      }
+      // ルーム側にもグループ情報を保持
+      let room = await getRoom(roomId);
+      if (room) {
+        if (typeof room === 'string') room = JSON.parse(room);
+        room.groupId = groupId;
+        room.groupName = group.name;
+        await saveRoom(roomId, room);
+      }
+      return res.status(200).json({ status: 'ok', group });
+    }
+
+    // === 系列グループからルーム削除 ===
+    if (pathname.match(/^\/api\/group\/[^/]+\/remove-room$/) && req.method === 'POST') {
+      const groupId = pathname.split('/')[3];
+      const body = await parseBody(req);
+      const roomId = (body.roomId || '').trim();
+
+      let group = await getGroup(groupId);
+      if (!group) return res.status(404).json({ error: 'グループが見つかりません' });
+      if (typeof group === 'string') group = JSON.parse(group);
+
+      group.roomIds = group.roomIds.filter(r => r !== roomId);
+      await saveGroup(groupId, group);
+
+      // ルーム側からもグループ情報を削除
+      let room = await getRoom(roomId);
+      if (room) {
+        if (typeof room === 'string') room = JSON.parse(room);
+        delete room.groupId;
+        delete room.groupName;
+        await saveRoom(roomId, room);
+      }
+      return res.status(200).json({ status: 'ok' });
+    }
+
+    // === 系列グループ情報取得 ===
+    if (pathname.match(/^\/api\/group\/[^/]+$/) && req.method === 'GET') {
+      const groupId = pathname.split('/')[3];
+      let group = await getGroup(groupId);
+      if (!group) return res.status(404).json({ error: 'グループが見つかりません' });
+      if (typeof group === 'string') group = JSON.parse(group);
+      return res.status(200).json(group);
+    }
+
+    // === 系列横断在庫ダッシュボード ===
+    if (pathname.match(/^\/api\/group\/[^/]+\/dashboard$/) && req.method === 'GET') {
+      const groupId = pathname.split('/')[3];
+      let group = await getGroup(groupId);
+      if (!group) return res.status(404).json({ error: 'グループが見つかりません' });
+      if (typeof group === 'string') group = JSON.parse(group);
+
+      const clinics = [];
+      // 薬剤名→{name, unit, category, clinics: [{clinicId, clinicName, quantity, expiryDate, lots}]} のマップ
+      const medMap = {};
+
+      for (const roomId of group.roomIds) {
+        let room = await getRoom(roomId);
+        if (!room) continue;
+        if (typeof room === 'string') room = JSON.parse(room);
+        clinics.push({ id: roomId, name: room.name });
+
+        if (!Array.isArray(room.medicines)) continue;
+        for (const med of room.medicines) {
+          const key = med.name + '___' + (med.unit || '個');
+          if (!medMap[key]) {
+            medMap[key] = {
+              name: med.name,
+              unit: med.unit || '個',
+              category: med.category || '',
+              clinics: [],
+            };
+          }
+          medMap[key].clinics.push({
+            clinicId: roomId,
+            clinicName: room.name,
+            quantity: med.quantity,
+            expiryDate: med.expiryDate || '',
+            lots: med.lots || [],
+          });
+        }
+      }
+
+      const medicines = Object.values(medMap);
+      return res.status(200).json({ clinics, medicines, groupName: group.name });
     }
 
     return res.status(404).json({ error: 'Not found' });
