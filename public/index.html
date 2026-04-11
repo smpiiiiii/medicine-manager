@@ -990,20 +990,88 @@
             var history = getHistory();
             var notJoined = history.filter(function(h) { return !(group.roomIds || []).includes(h.id); });
             if (notJoined.length === 0) { showToast('追加可能なクリニックはありません'); return; }
-            var msg = '追加するクリニックを選択:\n';
-            for (var i = 0; i < notJoined.length; i++) msg += (i+1) + '. ' + notJoined[i].name + '\n';
-            msg += '\n番号を入力（カンマ区切りで複数可）';
-            var input = prompt(msg);
-            if (!input) return;
-            var nums = input.split(/[,、\s]+/);
-            for (var n = 0; n < nums.length; n++) {
-                var idx = parseInt(nums[n]) - 1;
-                if (idx >= 0 && idx < notJoined.length) {
-                    apiCall('POST', '/api/group/' + gid + '/add-room', { roomId: notJoined[idx].id }, function() {});
-                }
+
+            // インラインUIをグループ管理カード内に表示
+            var existing = document.getElementById('addClinicPanel_' + gid);
+            if (existing) { existing.remove(); return; } // トグル
+
+            // 他のパネルを閉じる
+            var panels = document.querySelectorAll('[id^="addClinicPanel_"]');
+            for (var p = 0; p < panels.length; p++) panels[p].remove();
+
+            var panel = document.createElement('div');
+            panel.id = 'addClinicPanel_' + gid;
+            panel.style.cssText = 'margin-top:8px;padding:10px;background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:10px;border:1px solid #6366f1;';
+
+            var title = document.createElement('div');
+            title.style.cssText = 'font-size:12px;color:#a5b4fc;font-weight:700;margin-bottom:8px;';
+            title.textContent = '追加するクリニックを選択:';
+            panel.appendChild(title);
+
+            var selectedIds = new Set();
+            for (var i = 0; i < notJoined.length; i++) {
+                (function(clinic) {
+                    var row = document.createElement('label');
+                    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(255,255,255,0.05);border-radius:8px;margin-bottom:4px;cursor:pointer;';
+                    var cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.style.cssText = 'width:18px;height:18px;accent-color:#8b5cf6;cursor:pointer;flex-shrink:0;';
+                    cb.addEventListener('change', function() {
+                        if (this.checked) selectedIds.add(clinic.id);
+                        else selectedIds.delete(clinic.id);
+                        countEl.textContent = selectedIds.size + '件選択中';
+                        addBtn.disabled = selectedIds.size === 0;
+                    });
+                    var label = document.createElement('span');
+                    label.style.cssText = 'font-size:12px;color:#e2e8f0;';
+                    label.textContent = '🏥 ' + clinic.name;
+                    row.appendChild(cb);
+                    row.appendChild(label);
+                    panel.appendChild(row);
+                })(notJoined[i]);
             }
-            setTimeout(renderGroupSection, 500);
-            showToast('✅ クリニックを追加しました');
+
+            var countEl = document.createElement('div');
+            countEl.style.cssText = 'font-size:11px;color:#94a3b8;margin-top:6px;';
+            countEl.textContent = '0件選択中';
+            panel.appendChild(countEl);
+
+            var btnRow = document.createElement('div');
+            btnRow.style.cssText = 'display:flex;gap:6px;margin-top:8px;';
+
+            var addBtn = document.createElement('button');
+            addBtn.className = 'btn btn-primary';
+            addBtn.style.cssText = 'flex:1;font-size:12px;padding:8px;';
+            addBtn.textContent = '✅ 追加する';
+            addBtn.disabled = true;
+            addBtn.addEventListener('click', function() {
+                var ids = Array.from(selectedIds);
+                var done = 0;
+                for (var j = 0; j < ids.length; j++) {
+                    apiCall('POST', '/api/group/' + gid + '/add-room', { roomId: ids[j] }, function() {
+                        done++;
+                        if (done >= ids.length) {
+                            showToast('✅ ' + ids.length + '件のクリニックを追加しました');
+                            panel.remove();
+                            renderGroupSection();
+                        }
+                    });
+                }
+            });
+
+            var cancelBtn = document.createElement('button');
+            cancelBtn.className = 'btn btn-outline';
+            cancelBtn.style.cssText = 'font-size:12px;padding:8px;';
+            cancelBtn.textContent = 'キャンセル';
+            cancelBtn.addEventListener('click', function() { panel.remove(); });
+
+            btnRow.appendChild(addBtn);
+            btnRow.appendChild(cancelBtn);
+            panel.appendChild(btnRow);
+
+            // グループ管理カードの直後に挿入
+            var listSection = document.getElementById('groupListSection');
+            if (listSection) listSection.appendChild(panel);
         });
     };
 
