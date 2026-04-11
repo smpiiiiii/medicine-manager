@@ -481,8 +481,10 @@
                 </select>
             </div>
         </div>
-        <label>消費期限 *</label>
-        <input type="date" id="editExpiry">
+        <div id="editExpiryWrap">
+            <label>消費期限 *</label>
+            <input type="date" id="editExpiry">
+        </div>
         <label>保管場所</label>
         <input type="text" id="editLocation">
         <label>カテゴリ</label>
@@ -2058,8 +2060,13 @@
         document.getElementById('editMemo').value = med.memo || '';
         // ロット一覧表示（操作可能）
         var lotSection = document.getElementById('editLotSection');
+        var expiryWrap = document.getElementById('editExpiryWrap');
         if (lotSection) {
             if (Array.isArray(med.lots) && med.lots.length > 0) {
+                // ロットがある場合、上部の消費期限欄は非表示（ロット別で管理）
+                if (expiryWrap) {
+                    expiryWrap.innerHTML = '<label style="color:#64748b;">消費期限</label><div style="padding:8px 12px;background:rgba(15,23,42,.5);border:1px solid #334155;border-radius:8px;font-size:12px;color:#94a3b8;">📦 下のロット別で個別に管理されています</div>';
+                }
                 var unit = med.unit || '個';
                 var html = '<div style="font-size:12px;font-weight:900;color:#38bdf8;margin-bottom:6px;">📦 ロット別管理 (' + med.lots.length + ')</div>';
                 html += '<div style="font-size:10px;color:#64748b;margin-bottom:8px;">※ ロットの数量・期限を変更できます</div>';
@@ -2105,6 +2112,11 @@
                 document.getElementById('editQty').title = 'ロット別数量から自動計算されます';
             } else {
                 lotSection.innerHTML = '';
+                // 上部の消費期限欄を復元
+                if (expiryWrap) {
+                    expiryWrap.innerHTML = '<label>消費期限 *</label><input type="date" id="editExpiry">';
+                    document.getElementById('editExpiry').value = med.expiryDate || '';
+                }
                 document.getElementById('editQty').readOnly = false;
                 document.getElementById('editQty').style.opacity = '1';
                 document.getElementById('editQty').title = '';
