@@ -2152,7 +2152,7 @@
             name: document.getElementById('editName').value.trim(),
             quantity: parseInt(document.getElementById('editQty').value) || 0,
             unit: document.getElementById('editUnit').value,
-            expiryDate: document.getElementById('editExpiry').value,
+            expiryDate: (document.getElementById('editExpiry') || {}).value || '',
             location: document.getElementById('editLocation').value.trim(),
             category: document.getElementById('editCategory').value,
             barcode: document.getElementById('editBarcode').value.trim(),
