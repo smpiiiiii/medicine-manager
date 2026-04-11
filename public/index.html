@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>阮ｬ蜑､蝨ｨ蠎ｫ繝槭ロ繝ｼ繧ｸ繝｣繝ｼ</title>
-    <meta name="description" content="阮ｬ蜑､縺ｮ豸郁ｲｻ譛滄剞繧堤ｮ｡逅・＠縲∵悄髯仙燕縺ｫ騾夂衍縺吶ｋ繧｢繝励Μ">
+    <title>薬剤在庫マネージャー</title>
+    <meta name="description" content="薬剤の消費期限を管理し、期限前に通知するアプリ">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/icon-192.png" type="image/png">
@@ -16,7 +16,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Noto Sans JP', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
 
-        /* 繝倥ャ繝繝ｼ */
+        /* ヘッダー */
         .header { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #fff; padding: 16px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(14,165,233,.3); }
         .header h1 { font-size: 16px; font-weight: 900; }
         .header .sub { font-size: 11px; opacity: .8; margin-top: 2px; }
@@ -27,14 +27,14 @@
         .stat-warn b { color: #fbbf24; }
         .stat-safe b { color: #34d399; }
 
-        /* 繧ｳ繝ｳ繝・Φ繝・*/
+        /* コンテンツ */
         .content { padding: 12px; max-width: 480px; margin: 0 auto; padding-bottom: 80px; }
 
-        /* 繧ｫ繝ｼ繝・*/
+        /* カード */
         .card { background: #1e293b; border-radius: 14px; padding: 14px; margin-bottom: 10px; border: 1px solid #334155; }
         .card h3 { font-size: 13px; color: #94a3b8; margin-bottom: 10px; font-weight: 700; }
 
-        /* 繝輔か繝ｼ繝 */
+        /* フォーム */
         label { font-size: 11px; font-weight: 700; color: #64748b; display: block; margin-bottom: 3px; margin-top: 8px; }
         label:first-child { margin-top: 0; }
         input, select, textarea { width: 100%; border: 1.5px solid #334155; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-family: inherit; outline: none; background: #0f172a; color: #e2e8f0; }
@@ -44,7 +44,7 @@
         .form-row { display: flex; gap: 8px; }
         .form-row > div { flex: 1; }
 
-        /* 繝懊ち繝ｳ */
+        /* ボタン */
         .btn { display: block; width: 100%; border: none; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; color: #fff; margin-top: 10px; text-align: center; transition: all .2s; }
         .btn:active { transform: scale(.98); opacity: .85; }
         .btn-primary { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
@@ -55,7 +55,7 @@
         .btn-sm { font-size: 11px; padding: 6px 12px; margin-top: 0; width: auto; display: inline-block; border-radius: 8px; }
         .btn-icon { width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 14px; margin-top: 0; flex-shrink: 0; }
 
-        /* 阮ｬ蜑､繧ｫ繝ｼ繝・*/
+        /* 薬剤カード */
         .med-card { background: #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 8px; border-left: 4px solid #334155; transition: all .2s; }
         .med-card.status-danger { border-left-color: #ef4444; background: linear-gradient(135deg, #1e293b, #2a1f1f); }
         .med-card.status-warn { border-left-color: #f59e0b; background: linear-gradient(135deg, #1e293b, #2a271f); }
@@ -79,22 +79,22 @@
         .med-detail { font-size: 11px; color: #64748b; margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; }
         .med-detail span::before { content: ''; display: inline-block; width: 4px; height: 4px; background: #475569; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
 
-        /* 繝輔ぅ繝ｫ繧ｿ繝ｼ繧ｿ繝・*/
+        /* フィルタータブ */
         .filter-tabs { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .filter-tab { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; background: #1e293b; border: 1px solid #334155; color: #94a3b8; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
         .filter-tab.active { background: #0ea5e9; border-color: #0ea5e9; color: #fff; }
 
-        /* 讀懃ｴ｢ */
+        /* 検索 */
         .search-box { position: relative; margin-bottom: 10px; }
         .search-box input { padding-left: 36px; }
-        .search-box::before { content: '剥'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; }
+        .search-box::before { content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; }
 
-        /* 遨ｺ迥ｶ諷・*/
+        /* 空状態 */
         .empty { text-align: center; padding: 40px 20px; color: #475569; }
         .empty .emoji { font-size: 48px; margin-bottom: 12px; }
         .empty .text { font-size: 13px; line-height: 1.6; }
 
-        /* 繝｢繝ｼ繝繝ｫ */
+        /* モーダル */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.6); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
         .modal-overlay.show { display: flex; }
         .modal { background: #1e293b; border-radius: 20px 20px 0 0; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; padding: 20px 16px 32px; animation: slideUp .3s ease; }
@@ -102,12 +102,12 @@
         .modal-handle { width: 40px; height: 4px; background: #475569; border-radius: 2px; margin: 0 auto 16px; }
         .modal h2 { font-size: 16px; font-weight: 900; margin-bottom: 12px; }
 
-        /* 騾夂衍繝舌リ繝ｼ */
+        /* 通知バナー */
         .notify-banner { background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .notify-banner .emoji { font-size: 24px; flex-shrink: 0; }
         .notify-banner .text { flex: 1; font-size: 12px; color: #fff; font-weight: 700; line-height: 1.4; }
 
-        /* 繝医・繧ｹ繝・*/
+        /* トースト */
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #10b981; color: #fff; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 700; z-index: 300; box-shadow: 0 4px 12px rgba(0,0,0,.3); transition: all .3s; opacity: 0; pointer-events: none; }
         .toast.show { opacity: 1; }
 
@@ -115,7 +115,7 @@
         #fabBtn { display: none; }
         #fabBtn.fab-show { display: flex !important; }
 
-        /* CSV繧､繝ｳ繝昴・繝医Δ繝ｼ繝繝ｫ */
+        /* CSVインポートモーダル */
         .csv-dropzone { border: 2px dashed #334155; border-radius: 14px; padding: 32px 16px; text-align: center; cursor: pointer; transition: all .3s; background: rgba(14,165,233,.04); }
         .csv-dropzone:hover, .csv-dropzone.drag-over { border-color: #0ea5e9; background: rgba(14,165,233,.1); }
         .csv-dropzone .drop-icon { font-size: 40px; margin-bottom: 8px; }
@@ -126,7 +126,7 @@
         .csv-preview-table td { padding: 6px; border-bottom: 1px solid #1e293b; color: #e2e8f0; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .csv-preview-table tr:hover td { background: rgba(14,165,233,.08); }
         .csv-preview-table tr.csv-row-error td { background: rgba(239,68,68,.1); }
-        .csv-preview-table tr.csv-row-error td:first-child::before { content: '笞・・'; }
+        .csv-preview-table tr.csv-row-error td:first-child::before { content: '⚠️ '; }
         .csv-preview-wrap { max-height: 320px; overflow: auto; border-radius: 10px; border: 1px solid #334155; background: #0f172a; }
         .csv-stats { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
         .csv-stats .csv-stat { font-size: 12px; padding: 4px 10px; border-radius: 10px; font-weight: 700; }
@@ -135,7 +135,7 @@
         .csv-stat-dup { background: rgba(245,158,11,.15); color: #fbbf24; }
         .csv-template-link { font-size: 11px; color: #0ea5e9; cursor: pointer; text-decoration: underline; margin-top: 8px; display: inline-block; }
 
-        /* 莠域ｸｬ讀懃ｴ｢ */
+        /* 予測検索 */
         .autocomplete-wrap { position: relative; }
         .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #1e293b; border: 1.5px solid #0ea5e9; border-top: none; border-radius: 0 0 10px 10px; max-height: 180px; overflow-y: auto; z-index: 210; display: none; }
         .autocomplete-list.show { display: block; }
@@ -144,13 +144,13 @@
         .autocomplete-item:hover, .autocomplete-item.active { background: #0ea5e9; color: #fff; }
         .autocomplete-item .match { color: #fbbf24; font-weight: 700; }
 
-        /* 繝懊ヨ繝繝翫ン */
+        /* ボトムナビ */
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; border-top: 1px solid #334155; display: flex; justify-content: center; max-width: 480px; margin: 0 auto; z-index: 100; }
         .nav-item { flex: 1; text-align: center; padding: 10px 0 8px; font-size: 10px; color: #64748b; cursor: pointer; }
         .nav-item.active { color: #0ea5e9; }
         .nav-item .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
 
-        /* 繝舌・繧ｳ繝ｼ繝峨せ繧ｭ繝｣繝翫・ */
+        /* バーコードスキャナー */
         .scanner-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; z-index: 250; flex-direction: column; }
         .scanner-overlay.show { display: flex; }
         .scanner-header { background: rgba(0,0,0,.8); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 2; }
@@ -159,16 +159,16 @@
         .scanner-viewport { flex: 1; position: relative; overflow: hidden; }
         .scanner-viewport video { width: 100%; height: 100%; object-fit: cover; }
         .scanner-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 70%; max-width: 280px; aspect-ratio: 3/1; border: 3px solid #0ea5e9; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0,0,0,.5); z-index: 1; }
-        .scanner-guide::after { content: '繝舌・繧ｳ繝ｼ繝峨ｒ譫蜀・↓蜷医ｏ縺帙※縺上□縺輔＞'; position: absolute; bottom: -36px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; text-shadow: 0 1px 4px rgba(0,0,0,.8); }
+        .scanner-guide::after { content: 'バーコードを枠内に合わせてください'; position: absolute; bottom: -36px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; text-shadow: 0 1px 4px rgba(0,0,0,.8); }
         .scanner-result { background: rgba(0,0,0,.8); padding: 12px 16px; text-align: center; z-index: 2; }
         .scanner-result .code { font-size: 18px; font-weight: 900; color: #0ea5e9; font-family: monospace; }
         .scanner-result .hint { font-size: 11px; color: #94a3b8; margin-top: 4px; }
 
-        /* 閾ｪ蜍輔Μ繝ｭ繝ｼ繝峨う繝ｳ繧ｸ繧ｱ繝ｼ繧ｿ繝ｼ */
+        /* 自動リロードインジケーター */
         .auto-reload-badge { position: fixed; top: 8px; right: 8px; background: rgba(16,185,129,.9); color: #fff; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 12px; z-index: 150; opacity: 0; transition: opacity .3s; pointer-events: none; }
         .auto-reload-badge.show { opacity: 1; }
 
-        /* 繝繝・す繝･繝懊・繝・*/
+        /* ダッシュボード */
         .dash-card { background: #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 1px solid #334155; }
         .dash-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
         .dash-card-name { font-size: 14px; font-weight: 900; color: #f1f5f9; flex: 1; }
@@ -190,369 +190,368 @@
 <body>
 
 <div class="header">
-    <h1 id="headerTitle">抽 阮ｬ蜑､蝨ｨ蠎ｫ繝槭ロ繝ｼ繧ｸ繝｣繝ｼ</h1>
+    <h1 id="headerTitle">💊 薬剤在庫マネージャー</h1>
     <div class="sub" id="headerSub"></div>
     <div class="stats hidden" id="statsBar">
-        <div class="s stat-danger">閥 譛滄剞蛻・ｌ <b id="expiredCount">0</b></div>
-        <div class="s stat-warn">泯 1繝ｶ譛井ｻ･蜀・<b id="warningCount">0</b></div>
-        <div class="s stat-safe">泙 螳牙・ <b id="safeCount">0</b></div>
+        <div class="s stat-danger">🔴 期限切れ <b id="expiredCount">0</b></div>
+        <div class="s stat-warn">🟡 1ヶ月以内 <b id="warningCount">0</b></div>
+        <div class="s stat-safe">🟢 安全 <b id="safeCount">0</b></div>
     </div>
 </div>
 
 <div class="content">
-    <!-- ===== 繝帙・繝逕ｻ髱｢・医け繝ｪ繝九ャ繧ｯ驕ｸ謚橸ｼ・===== -->
+    <!-- ===== ホーム画面（クリニック選択） ===== -->
     <div id="topView">
-        <!-- 邉ｻ蛻励げ繝ｫ繝ｼ繝励ム繝・す繝･繝懊・繝我ｸ隕ｧ -->
+        <!-- 系列グループダッシュボード一覧 -->
         <div id="groupDashSection" class="hidden" style="margin-bottom:10px;">
             <div id="groupDashList"></div>
         </div>
 
-        <!-- 繧ｯ繝ｪ繝九ャ繧ｯ荳隕ｧ -->
-        <!-- 繧ｯ繝ｪ繝九ャ繧ｯ荳隕ｧ -->
+        <!-- クリニック一覧 -->
         <div id="historySection" class="card hidden">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                <h3 style="margin:0;">唱 繧ｯ繝ｪ繝九ャ繧ｯ繧帝∈謚・/h3>
-                <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;" id="toggleSelectMode" onclick="toggleClinicSelect()">笘托ｸ・驕ｸ謚・/button>
+                <h3 style="margin:0;">🏥 クリニックを選択</h3>
+                <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;" id="toggleSelectMode" onclick="toggleClinicSelect()">☑️ 選択</button>
             </div>
             <div id="historyList"></div>
             <div id="clinicSelectBar" class="hidden" style="margin-top:8px;padding:10px;background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:10px;border:1px solid #6366f1;">
-                <div style="font-size:12px;color:#a5b4fc;margin-bottom:6px;" id="selectCount">0莉ｶ驕ｸ謚樔ｸｭ</div>
+                <div style="font-size:12px;color:#a5b4fc;margin-bottom:6px;" id="selectCount">0件選択中</div>
                 <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <button class="btn btn-primary" style="flex:1;font-size:12px;padding:8px;" onclick="createGroupFromSelected()">笨ｨ 驕ｸ謚槭°繧峨げ繝ｫ繝ｼ繝嶺ｽ懈・</button>
-                    <button class="btn btn-outline" style="font-size:12px;padding:8px;" onclick="toggleClinicSelect()">繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
+                    <button class="btn btn-primary" style="flex:1;font-size:12px;padding:8px;" onclick="createGroupFromSelected()">✨ 選択からグループ作成</button>
+                    <button class="btn btn-outline" style="font-size:12px;padding:8px;" onclick="toggleClinicSelect()">キャンセル</button>
                 </div>
             </div>
         </div>
 
-        <!-- 譁ｰ隕丈ｽ懈・ -->
+        <!-- 新規作成 -->
         <div class="card" style="border:1px dashed #334155;">
-            <h3>筐・譁ｰ縺励＞繧ｯ繝ｪ繝九ャ繧ｯ繧堤匳骭ｲ</h3>
-            <label>繧ｯ繝ｪ繝九ャ繧ｯ蜷阪・阮ｬ螻蜷・/label>
-            <input type="text" id="roomName" placeholder="萓・ 笳銀雷阮ｬ螻 / 笆ｳ笆ｳ繧ｯ繝ｪ繝九ャ繧ｯ">
-            <button class="btn btn-primary" id="createRoomBtn">笨・菴懈・縺吶ｋ</button>
+            <h3>➕ 新しいクリニックを登録</h3>
+            <label>クリニック名・薬局名</label>
+            <input type="text" id="roomName" placeholder="例: ○○薬局 / △△クリニック">
+            <button class="btn btn-primary" id="createRoomBtn">✅ 作成する</button>
         </div>
 
-        <!-- 邉ｻ蛻励げ繝ｫ繝ｼ繝礼ｮ｡逅・-->
+        <!-- 系列グループ管理 -->
         <div class="card">
-            <h3>召 邉ｻ蛻励げ繝ｫ繝ｼ繝礼ｮ｡逅・/h3>
+            <h3>🏢 系列グループ管理</h3>
             <div id="groupListSection"></div>
             <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
-                <button class="btn btn-primary" style="flex:1;font-size:12px;padding:8px;" onclick="createGroup()">笨ｨ 繧ｰ繝ｫ繝ｼ繝嶺ｽ懈・</button>
-                <button class="btn btn-outline" style="flex:1;font-size:12px;padding:8px;" onclick="joinGroup()">迫 ID縺ｧ蜿ょ刈</button>
+                <button class="btn btn-primary" style="flex:1;font-size:12px;padding:8px;" onclick="createGroup()">✨ グループ作成</button>
+                <button class="btn btn-outline" style="flex:1;font-size:12px;padding:8px;" onclick="joinGroup()">🔗 IDで参加</button>
             </div>
         </div>
 
-        <!-- 蜈ｱ譛牙盾蜉 -->
+        <!-- 共有参加 -->
         <div class="card">
-            <h3>迫 蜈ｱ譛蔚RL縺ｧ蜿ょ刈</h3>
+            <h3>🔗 共有URLで参加</h3>
             <div style="font-size:12px;color:#64748b;line-height:1.6;">
-                莉ｲ髢薙°繧牙・譛峨＆繧後◆URL縺ｫ繧｢繧ｯ繧ｻ繧ｹ縺励※縺上□縺輔＞縲・
+                仲間から共有されたURLにアクセスしてください。
             </div>
         </div>
     </div>
 
-    <!-- ===== 繝繝・す繝･繝懊・繝臥判髱｢ ===== -->
+    <!-- ===== ダッシュボード画面 ===== -->
     <div id="dashView" class="hidden">
-        <button class="btn btn-outline" id="backFromDash" style="margin-bottom:12px;">竊・繧ｯ繝ｪ繝九ャ繧ｯ荳隕ｧ縺ｸ謌ｻ繧・/button>
+        <button class="btn btn-outline" id="backFromDash" style="margin-bottom:12px;">← クリニック一覧へ戻る</button>
         <div style="text-align:center;margin-bottom:12px;">
-            <div style="font-size:16px;font-weight:900;color:#a78bfa;">投 <span id="dashGroupName">邉ｻ蛻怜惠蠎ｫ繝繝・す繝･繝懊・繝・/span></div>
+            <div style="font-size:16px;font-weight:900;color:#a78bfa;">📊 <span id="dashGroupName">系列在庫ダッシュボード</span></div>
             <div id="dashClinicList" style="font-size:11px;color:#64748b;margin-top:4px;"></div>
         </div>
         <div id="dashSummary" class="dash-summary"></div>
-        <!-- 讀懃ｴ｢ -->
+        <!-- 検索 -->
         <div class="search-box" style="margin-bottom:8px;">
-            <input type="text" id="dashSearch" placeholder="阮ｬ蜑､蜷阪〒讓ｪ譁ｭ讀懃ｴ｢...">
+            <input type="text" id="dashSearch" placeholder="薬剤名で横断検索...">
         </div>
-        <!-- 繧ｫ繝・ざ繝ｪ繝輔ぅ繝ｫ繧ｿ繝ｼ -->
+        <!-- カテゴリフィルター -->
         <div class="filter-tabs" id="dashCatTabs" style="margin-bottom:8px;">
-            <div class="filter-tab active" data-cat="all">蜈ｨ繧ｫ繝・ざ繝ｪ</div>
+            <div class="filter-tab active" data-cat="all">全カテゴリ</div>
         </div>
-        <!-- 繧ｹ繝・・繧ｿ繧ｹ繝輔ぅ繝ｫ繧ｿ繝ｼ -->
+        <!-- ステータスフィルター -->
         <div class="filter-tabs" id="dashStatusTabs" style="margin-bottom:8px;">
-            <div class="filter-tab active" data-st="all">縺吶∋縺ｦ</div>
-            <div class="filter-tab" data-st="danger">閥 譛滄剞蛻・ｌ</div>
-            <div class="filter-tab" data-st="warn">泯 1繝ｶ譛井ｻ･蜀・/div>
-            <div class="filter-tab" data-st="out">筮・蝨ｨ蠎ｫ蛻・ｌ</div>
+            <div class="filter-tab active" data-st="all">すべて</div>
+            <div class="filter-tab" data-st="danger">🔴 期限切れ</div>
+            <div class="filter-tab" data-st="warn">🟡 1ヶ月以内</div>
+            <div class="filter-tab" data-st="out">⬛ 在庫切れ</div>
         </div>
-        <!-- 繧ｽ繝ｼ繝・-->
+        <!-- ソート -->
         <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;">
-            <span style="font-size:12px;color:#94a3b8;font-weight:700;">荳ｦ縺ｳ譖ｿ縺・</span>
+            <span style="font-size:12px;color:#94a3b8;font-weight:700;">並び替え:</span>
             <select id="dashSort" style="flex:1;padding:6px 10px;border-radius:8px;border:1.5px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;font-weight:600;">
-                <option value="expiry">竢ｰ 譛滄剞縺瑚ｿ代＞鬆・/option>
-                <option value="name">・ 縺ゅ＞縺・∴縺企・/option>
-                <option value="qty">逃 謨ｰ驥上′蟆代↑縺・・/option>
+                <option value="expiry">⏰ 期限が近い順</option>
+                <option value="name">🅰 あいうえお順</option>
+                <option value="qty">📦 数量が少ない順</option>
             </select>
         </div>
-        <!-- 阮ｬ蜑､繝ｪ繧ｹ繝・-->
+        <!-- 薬剤リスト -->
         <div id="dashMedList"></div>
         <div id="dashEmpty" class="empty hidden">
-            <div class="emoji">投</div>
-            <div class="text">繝繝・す繝･繝懊・繝峨↓陦ｨ遉ｺ縺吶ｋ繝・・繧ｿ縺後≠繧翫∪縺帙ｓ</div>
+            <div class="emoji">📊</div>
+            <div class="text">ダッシュボードに表示するデータがありません</div>
         </div>
     </div>
 
-    <!-- ===== 繝ｫ繝ｼ繝逕ｻ髱｢ ===== -->
+    <!-- ===== ルーム画面 ===== -->
     <div id="roomView" class="hidden">
-        <button class="btn btn-outline" id="backToTopBtn" style="margin-bottom:12px;">竊・繧ｯ繝ｪ繝九ャ繧ｯ驕ｸ謚槭∈謌ｻ繧・/button>
-        <!-- 諡・ｽ楢・錐繝舌ャ繧ｸ -->
+        <button class="btn btn-outline" id="backToTopBtn" style="margin-bottom:12px;">← クリニック選択へ戻る</button>
+        <!-- 担当者名バッジ -->
         <div style="text-align:right;margin-bottom:8px;">
-            <span id="myNameLabel" onclick="changeMyName()" style="display:inline-block;cursor:pointer;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;background:rgba(14,165,233,.15);color:#38bdf8;border:1px solid rgba(14,165,233,.3)">側 諡・ｽ楢・悴險ｭ螳・/span>
+            <span id="myNameLabel" onclick="changeMyName()" style="display:inline-block;cursor:pointer;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;background:rgba(14,165,233,.15);color:#38bdf8;border:1px solid rgba(14,165,233,.3)">👤 担当者未設定</span>
         </div>
-        <!-- 蜿ょ刈繧ｹ繧ｿ繝・ヵ荳隕ｧ -->
+        <!-- 参加スタッフ一覧 -->
         <div id="staffSection" class="card hidden" style="margin-bottom:10px;">
             <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" id="staffToggleBtn">
-                <h3 style="margin:0">則 蜿ょ刈繧ｹ繧ｿ繝・ヵ</h3>
-                <span id="staffToggleIcon" style="font-size:14px;color:#64748b;transition:transform .2s">笆ｼ</span>
+                <h3 style="margin:0">👥 参加スタッフ</h3>
+                <span id="staffToggleIcon" style="font-size:14px;color:#64748b;transition:transform .2s">▼</span>
             </div>
             <div id="staffList" style="margin-top:8px;"></div>
         </div>
-        <!-- 騾夂衍繝舌リ繝ｼ -->
+        <!-- 通知バナー -->
         <div id="notifyBanner" class="notify-banner hidden" onclick="requestNotification()">
-            <div class="emoji">粕</div>
-            <div class="text">繧ｿ繝・・縺励※騾夂衍繧呈怏蜉ｹ縺ｫ縺吶ｋ<br>豸郁ｲｻ譛滄剞1繝ｶ譛亥燕縺ｫ縺顔衍繧峨○縺励∪縺・/div>
+            <div class="emoji">🔔</div>
+            <div class="text">タップして通知を有効にする<br>消費期限1ヶ月前にお知らせします</div>
         </div>
 
-        <!-- 譛滄剞繧｢繝ｩ繝ｼ繝・-->
+        <!-- 期限アラート -->
         <div id="expiryAlerts"></div>
 
-        <!-- 讀懃ｴ｢ -->
+        <!-- 検索 -->
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="阮ｬ蜑､蜷阪〒讀懃ｴ｢...">
+            <input type="text" id="searchInput" placeholder="薬剤名で検索...">
         </div>
 
-        <!-- 繝輔ぅ繝ｫ繧ｿ繝ｼ -->
+        <!-- フィルター -->
         <div class="filter-tabs" id="filterTabs">
-            <div class="filter-tab active" data-filter="all">縺吶∋縺ｦ</div>
-            <div class="filter-tab" data-filter="danger">閥 譛滄剞蛻・ｌ</div>
-            <div class="filter-tab" data-filter="warn">泯 1繝ｶ譛井ｻ･蜀・/div>
-            <div class="filter-tab" data-filter="safe">泙 螳牙・</div>
-            <div class="filter-tab" data-filter="out">筮・蝨ｨ蠎ｫ蛻・ｌ</div>
+            <div class="filter-tab active" data-filter="all">すべて</div>
+            <div class="filter-tab" data-filter="danger">🔴 期限切れ</div>
+            <div class="filter-tab" data-filter="warn">🟡 1ヶ月以内</div>
+            <div class="filter-tab" data-filter="safe">🟢 安全</div>
+            <div class="filter-tab" data-filter="out">⬛ 在庫切れ</div>
         </div>
 
-        <!-- 繧ｫ繝・ざ繝ｪ繝輔ぅ繝ｫ繧ｿ繝ｼ -->
+        <!-- カテゴリフィルター -->
         <div class="filter-tabs" id="categoryTabs" style="margin-bottom:8px;">
-            <div class="filter-tab active" data-cat="all">蜈ｨ繧ｫ繝・ざ繝ｪ</div>
+            <div class="filter-tab active" data-cat="all">全カテゴリ</div>
         </div>
 
-        <!-- 荳諡ｬ謫堺ｽ懊ヰ繝ｼ -->
+        <!-- 一括操作バー -->
         <div id="bulkBar" class="hidden" style="display:flex;gap:6px;margin-bottom:10px;align-items:center;padding:8px;background:#1e293b;border-radius:10px;border:1px solid #334155;">
-            <button class="btn-sm btn-outline" onclick="toggleSelectAll()" id="selectAllBtn" style="padding:4px 10px;border:1px solid #334155;background:#0f172a;color:#94a3b8;border-radius:6px;font-size:11px;cursor:pointer;">笘・蜈ｨ驕ｸ謚・/button>
-            <span id="selectCount" style="font-size:11px;color:#94a3b8;flex:1;">0莉ｶ驕ｸ謚樔ｸｭ</span>
-            <button class="btn-sm" onclick="bulkDeleteSelected()" style="padding:4px 10px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#f87171;font-size:11px;font-weight:700;cursor:pointer;">卵 驕ｸ謚槫炎髯､</button>
-            <button class="btn-sm" onclick="exitSelectMode()" style="padding:4px 10px;border:1px solid #334155;background:#0f172a;color:#94a3b8;border-radius:6px;font-size:11px;cursor:pointer;">笨・/button>
+            <button class="btn-sm btn-outline" onclick="toggleSelectAll()" id="selectAllBtn" style="padding:4px 10px;border:1px solid #334155;background:#0f172a;color:#94a3b8;border-radius:6px;font-size:11px;cursor:pointer;">☐ 全選択</button>
+            <span id="selectCount" style="font-size:11px;color:#94a3b8;flex:1;">0件選択中</span>
+            <button class="btn-sm" onclick="bulkDeleteSelected()" style="padding:4px 10px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#f87171;font-size:11px;font-weight:700;cursor:pointer;">🗑 選択削除</button>
+            <button class="btn-sm" onclick="exitSelectMode()" style="padding:4px 10px;border:1px solid #334155;background:#0f172a;color:#94a3b8;border-radius:6px;font-size:11px;cursor:pointer;">✕</button>
         </div>
 
-        <!-- 繧ｽ繝ｼ繝・-->
+        <!-- ソート -->
         <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px">
-            <span style="font-size:12px;color:#94a3b8;font-weight:700">荳ｦ縺ｳ譖ｿ縺・</span>
+            <span style="font-size:12px;color:#94a3b8;font-weight:700">並び替え:</span>
             <select id="sortSelect" style="flex:1;padding:6px 10px;border-radius:8px;border:1.5px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;font-weight:600">
-                <option value="updated">売 譖ｴ譁ｰ鬆・/option>
-                <option value="name">・ 縺ゅ＞縺・∴縺企・/option>
-                <option value="category">東 遞ｮ鬘樣・/option>
-                <option value="expiry">竢ｰ 譛滄剞鬆・/option>
-                <option value="qty">逃 謨ｰ驥城・/option>
+                <option value="updated">🔄 更新順</option>
+                <option value="name">🅰 あいうえお順</option>
+                <option value="category">📌 種類順</option>
+                <option value="expiry">⏰ 期限順</option>
+                <option value="qty">📦 数量順</option>
             </select>
-            <button onclick="enterSelectMode()" style="padding:6px 10px;border-radius:8px;border:1.5px solid #334155;background:#0f172a;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer;" id="selectModeBtn">笘・驕ｸ謚・/button>
+            <button onclick="enterSelectMode()" style="padding:6px 10px;border-radius:8px;border:1.5px solid #334155;background:#0f172a;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer;" id="selectModeBtn">☑ 選択</button>
         </div>
 
-        <!-- 阮ｬ蜑､繝ｪ繧ｹ繝・-->
+        <!-- 薬剤リスト -->
         <div id="medList"></div>
 
 
-        <!-- 遨ｺ繝｡繝・そ繝ｼ繧ｸ -->
+        <!-- 空メッセージ -->
         <div id="emptyMsg" class="empty hidden">
-            <div class="emoji">抽</div>
-            <div class="text">縺ｾ縺阮ｬ蜑､縺檎匳骭ｲ縺輔ｌ縺ｦ縺・∪縺帙ｓ<br>荳九・縲鯉ｼ九阪・繧ｿ繝ｳ縺九ｉ霑ｽ蜉縺励∪縺励ｇ縺・/div>
+            <div class="emoji">💊</div>
+            <div class="text">まだ薬剤が登録されていません<br>下の「＋」ボタンから追加しましょう</div>
         </div>
 
-        <!-- 蜈ｱ譛峨・繧ｿ繝ｳ -->
+        <!-- 共有ボタン -->
         <div style="text-align:center;margin-top:16px;">
-            <button class="btn btn-outline" id="shareRoomBtn" style="display:inline-block;width:auto;padding:8px 20px;">豆 URL繧貞・譛・/button>
+            <button class="btn btn-outline" id="shareRoomBtn" style="display:inline-block;width:auto;padding:8px 20px;">📤 URLを共有</button>
         </div>
     </div>
 </div>
 
-<!-- FAB・郁ｿｽ蜉繝懊ち繝ｳ・・-->
+<!-- FAB（追加ボタン） -->
 <div id="fabBtn" style="position:fixed;bottom:70px;right:16px;z-index:99;flex-direction:column;gap:10px;align-items:flex-end;">
-    <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:16px;padding:0;box-shadow:0 4px 16px rgba(251,113,133,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fb7185,#e11d48);" onclick="openLogModal()">搭</button>
-    <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:16px;padding:0;box-shadow:0 4px 16px rgba(16,185,129,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#10b981,#059669);" onclick="openCsvModal()">塘</button>
-    <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:16px;padding:0;box-shadow:0 4px 16px rgba(139,92,246,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#8b5cf6,#7c3aed);" onclick="exportCsv()">踏</button>
-    <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:18px;padding:0;box-shadow:0 4px 16px rgba(245,158,11,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f59e0b,#d97706);" onclick="openScanInput()">捷・・/button>
-    <button class="btn btn-primary" style="width:56px;height:56px;border-radius:50%;font-size:24px;padding:0;box-shadow:0 4px 16px rgba(14,165,233,.4);display:flex;align-items:center;justify-content:center;" onclick="openAddModal()">・・/button>
+    <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:16px;padding:0;box-shadow:0 4px 16px rgba(251,113,133,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fb7185,#e11d48);" onclick="openLogModal()">📋</button>
+    <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:16px;padding:0;box-shadow:0 4px 16px rgba(16,185,129,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#10b981,#059669);" onclick="openCsvModal()">📄</button>
+    <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:16px;padding:0;box-shadow:0 4px 16px rgba(139,92,246,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#8b5cf6,#7c3aed);" onclick="exportCsv()">📥</button>
+    <button class="btn" style="width:48px;height:48px;border-radius:50%;font-size:18px;padding:0;box-shadow:0 4px 16px rgba(245,158,11,.4);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f59e0b,#d97706);" onclick="openScanInput()">🏷️</button>
+    <button class="btn btn-primary" style="width:56px;height:56px;border-radius:50%;font-size:24px;padding:0;box-shadow:0 4px 16px rgba(14,165,233,.4);display:flex;align-items:center;justify-content:center;" onclick="openAddModal()">＋</button>
 </div>
 
-<!-- 謫堺ｽ懊Ο繧ｰ繝｢繝ｼ繝繝ｫ -->
+<!-- 操作ログモーダル -->
 <div class="modal-overlay" id="logModal">
     <div class="modal">
         <div class="modal-handle"></div>
-        <h2 style="margin-top:0">搭 謫堺ｽ懊Ο繧ｰ</h2>
+        <h2 style="margin-top:0">📋 操作ログ</h2>
         <div id="logList" style="max-height:60vh;overflow-y:auto;"></div>
         <div style="margin-top:16px;text-align:center">
-            <button class="btn btn-primary" onclick="document.getElementById('logModal').classList.remove('show')">髢峨§繧・/button>
+            <button class="btn btn-primary" onclick="document.getElementById('logModal').classList.remove('show')">閉じる</button>
         </div>
     </div>
 </div>
 
-<!-- 閾ｪ蜍輔Μ繝ｭ繝ｼ繝峨ヰ繝・ず -->
-<div class="auto-reload-badge" id="reloadBadge">売 譖ｴ譁ｰ縺ゅｊ</div>
+<!-- 自動リロードバッジ -->
+<div class="auto-reload-badge" id="reloadBadge">🔄 更新あり</div>
 
-<!-- 霑ｽ蜉繝｢繝ｼ繝繝ｫ -->
+<!-- 追加モーダル -->
 <div class="modal-overlay" id="addModal">
     <div class="modal">
         <div class="modal-handle"></div>
-        <h2>抽 阮ｬ蜑､繧堤匳骭ｲ</h2>
+        <h2>💊 薬剤を登録</h2>
         <div id="favSection" style="margin-bottom:14px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                <span style="font-size:12px;font-weight:900;color:#fbbf24">箝・縺頑ｰ励↓蜈･繧願脈蜑､</span>
-                <span id="favToggle" style="font-size:11px;color:#94a3b8;cursor:pointer;text-decoration:underline">陦ｨ遉ｺ/髱櫁｡ｨ遉ｺ</span>
+                <span style="font-size:12px;font-weight:900;color:#fbbf24">⭐ お気に入り薬剤</span>
+                <span id="favToggle" style="font-size:11px;color:#94a3b8;cursor:pointer;text-decoration:underline">表示/非表示</span>
             </div>
             <div id="favList" style="display:flex;flex-wrap:wrap;gap:6px;max-height:120px;overflow-y:auto"></div>
         </div>
         <div id="gs1InputSection" style="background:linear-gradient(135deg,rgba(14,165,233,.15),rgba(59,130,246,.1));border:2px solid rgba(14,165,233,.5);border-radius:14px;padding:14px;margin-bottom:14px;">
-            <div style="font-size:14px;color:#38bdf8;font-weight:900;margin-bottom:6px;">捷・・GS1繧ｳ繝ｼ繝峨〒邁｡蜊倡匳骭ｲ</div>
-            <div style="font-size:11px;color:#94a3b8;margin-bottom:8px;">繝舌・繧ｳ繝ｼ繝我ｸ九↓蜊ｰ蟄励＆繧後◆謨ｰ蟄励ｒ蜈･蜉・竊・隗｣譫舌〒譛滄剞繝ｻ繝ｭ繝・ヨ閾ｪ蜍募・蜉幢ｼ・/div>
-            <input type="text" id="gs1CodeInput" placeholder="萓・ (01)14987246758014(17)260400(10)AF4W" style="width:100%;font-size:15px;font-family:monospace;padding:12px;border-radius:10px;margin-bottom:8px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;">
-            <button type="button" class="btn btn-primary" id="gs1ParseBtn" style="width:100%;padding:12px;font-size:15px;font-weight:900;border-radius:10px;">剥 隗｣譫舌☆繧・/button>
+            <div style="font-size:14px;color:#38bdf8;font-weight:900;margin-bottom:6px;">🏷️ GS1コードで簡単登録</div>
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:8px;">バーコード下に印字された数字を入力 → 解析で期限・ロット自動入力！</div>
+            <input type="text" id="gs1CodeInput" placeholder="例: (01)14987246758014(17)260400(10)AF4W" style="width:100%;font-size:15px;font-family:monospace;padding:12px;border-radius:10px;margin-bottom:8px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;">
+            <button type="button" class="btn btn-primary" id="gs1ParseBtn" style="width:100%;padding:12px;font-size:15px;font-weight:900;border-radius:10px;">🔍 解析する</button>
             <div id="gs1ParseResult" style="font-size:12px;color:#94a3b8;margin-top:6px;"></div>
         </div>
-        <label>阮ｬ蜑､蜷・*</label>
+        <label>薬剤名 *</label>
         <div class="autocomplete-wrap">
-            <input type="text" id="medName" placeholder="萓・ 繝ｭ繧ｭ繧ｽ繝九Φ骭60mg" autocomplete="off">
+            <input type="text" id="medName" placeholder="例: ロキソニン錠60mg" autocomplete="off">
             <div class="autocomplete-list" id="addAutoList"></div>
         </div>
         <div class="form-row">
             <div>
-                <label>謨ｰ驥・*</label>
+                <label>数量 *</label>
                 <input type="number" id="medQty" placeholder="10" inputmode="numeric" value="1">
             </div>
             <div>
-                <label>蜊倅ｽ・/label>
+                <label>単位</label>
                 <select id="medUnit">
-                    <option value="蛟・>蛟・/option>
-                    <option value="邂ｱ">邂ｱ</option>
-                    <option value="譛ｬ">譛ｬ</option>
-                    <option value="陲・>陲・/option>
-                    <option value="繧ｷ繝ｼ繝・>繧ｷ繝ｼ繝・/option>
-                    <option value="骭">骭</option>
+                    <option value="個">個</option>
+                    <option value="箱">箱</option>
+                    <option value="本">本</option>
+                    <option value="袋">袋</option>
+                    <option value="シート">シート</option>
+                    <option value="錠">錠</option>
                     <option value="mL">mL</option>
                     <option value="g">g</option>
                 </select>
             </div>
         </div>
-        <label>豸郁ｲｻ譛滄剞 *</label>
+        <label>消費期限 *</label>
         <input type="date" id="medExpiry">
-        <label>菫晉ｮ｡蝣ｴ謇</label>
-        <input type="text" id="medLocation" placeholder="萓・ 蜀ｷ阡ｵ蠎ｫ / 譽哂-3">
-        <label>繧ｫ繝・ざ繝ｪ</label>
+        <label>保管場所</label>
+        <input type="text" id="medLocation" placeholder="例: 冷蔵庫 / 棚A-3">
+        <label>カテゴリ</label>
         <select id="medCategory">
-            <option value="">驕ｸ謚槭＠縺ｦ縺上□縺輔＞</option>
-            <option value="蜀・恪阮ｬ">蜀・恪阮ｬ</option>
-            <option value="螟也畑阮ｬ">螟也畑阮ｬ</option>
-            <option value="豕ｨ蟆・脈">豕ｨ蟆・脈</option>
-            <option value="豸域ｯ定脈">豸域ｯ定脈</option>
-            <option value="蛹ｻ逋よ攝譁・>蛹ｻ逋よ攝譁・/option>
-            <option value="縺昴・莉・>縺昴・莉・/option>
+            <option value="">選択してください</option>
+            <option value="内服薬">内服薬</option>
+            <option value="外用薬">外用薬</option>
+            <option value="注射薬">注射薬</option>
+            <option value="消毒薬">消毒薬</option>
+            <option value="医療材料">医療材料</option>
+            <option value="その他">その他</option>
         </select>
-        <label>蝠・刀繧ｳ繝ｼ繝・/label>
-        <input type="text" id="medBarcode" placeholder="萓・ 4987246758014" style="font-family:monospace">
-        <label>繝｡繝｢</label>
-        <textarea id="medMemo" placeholder="莉ｻ諢上・繝｡繝｢"></textarea>
-        <button class="btn btn-primary" id="addMedBtn">笨・逋ｻ骭ｲ縺吶ｋ</button>
-        <button class="btn btn-outline" onclick="closeAddModal()">繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
+        <label>商品コード</label>
+        <input type="text" id="medBarcode" placeholder="例: 4987246758014" style="font-family:monospace">
+        <label>メモ</label>
+        <textarea id="medMemo" placeholder="任意のメモ"></textarea>
+        <button class="btn btn-primary" id="addMedBtn">✅ 登録する</button>
+        <button class="btn btn-outline" onclick="closeAddModal()">キャンセル</button>
     </div>
 </div>
 
-<!-- 邱ｨ髮・Δ繝ｼ繝繝ｫ -->
+<!-- 編集モーダル -->
 <div class="modal-overlay" id="editModal">
     <div class="modal">
         <div class="modal-handle"></div>
-        <h2>笨擾ｸ・阮ｬ蜑､繧堤ｷｨ髮・/h2>
+        <h2>✏️ 薬剤を編集</h2>
         <input type="hidden" id="editMid">
-        <label>阮ｬ蜑､蜷・*</label>
+        <label>薬剤名 *</label>
         <div class="autocomplete-wrap">
             <input type="text" id="editName" autocomplete="off">
             <div class="autocomplete-list" id="editAutoList"></div>
         </div>
         <div class="form-row">
             <div>
-                <label>謨ｰ驥・/label>
+                <label>数量</label>
                 <input type="number" id="editQty" inputmode="numeric">
             </div>
             <div>
-                <label>蜊倅ｽ・/label>
+                <label>単位</label>
                 <select id="editUnit">
-                    <option value="蛟・>蛟・/option>
-                    <option value="邂ｱ">邂ｱ</option>
-                    <option value="譛ｬ">譛ｬ</option>
-                    <option value="陲・>陲・/option>
-                    <option value="繧ｷ繝ｼ繝・>繧ｷ繝ｼ繝・/option>
-                    <option value="骭">骭</option>
+                    <option value="個">個</option>
+                    <option value="箱">箱</option>
+                    <option value="本">本</option>
+                    <option value="袋">袋</option>
+                    <option value="シート">シート</option>
+                    <option value="錠">錠</option>
                     <option value="mL">mL</option>
                     <option value="g">g</option>
                 </select>
             </div>
         </div>
-        <label>豸郁ｲｻ譛滄剞 *</label>
+        <label>消費期限 *</label>
         <input type="date" id="editExpiry">
-        <label>菫晉ｮ｡蝣ｴ謇</label>
+        <label>保管場所</label>
         <input type="text" id="editLocation">
-        <label>繧ｫ繝・ざ繝ｪ</label>
+        <label>カテゴリ</label>
         <select id="editCategory">
-            <option value="">驕ｸ謚槭＠縺ｦ縺上□縺輔＞</option>
-            <option value="蜀・恪阮ｬ">蜀・恪阮ｬ</option>
-            <option value="螟也畑阮ｬ">螟也畑阮ｬ</option>
-            <option value="豕ｨ蟆・脈">豕ｨ蟆・脈</option>
-            <option value="豸域ｯ定脈">豸域ｯ定脈</option>
-            <option value="蛹ｻ逋よ攝譁・>蛹ｻ逋よ攝譁・/option>
-            <option value="縺昴・莉・>縺昴・莉・/option>
+            <option value="">選択してください</option>
+            <option value="内服薬">内服薬</option>
+            <option value="外用薬">外用薬</option>
+            <option value="注射薬">注射薬</option>
+            <option value="消毒薬">消毒薬</option>
+            <option value="医療材料">医療材料</option>
+            <option value="その他">その他</option>
         </select>
-        <label>蝠・刀繧ｳ繝ｼ繝・/label>
-        <input type="text" id="editBarcode" placeholder="蝠・刀繧ｳ繝ｼ繝・ style="font-family:monospace">
-        <label>繝｡繝｢</label>
+        <label>商品コード</label>
+        <input type="text" id="editBarcode" placeholder="商品コード" style="font-family:monospace">
+        <label>メモ</label>
         <textarea id="editMemo"></textarea>
         <div id="editLotSection" style="margin-top:10px;"></div>
-        <button class="btn btn-primary" id="saveEditBtn">笨・菫晏ｭ倥☆繧・/button>
-        <button class="btn btn-danger" id="deleteMedBtn">卵 蜑企勁縺吶ｋ</button>
-        <button class="btn btn-outline" onclick="closeEditModal()">繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
+        <button class="btn btn-primary" id="saveEditBtn">✅ 保存する</button>
+        <button class="btn btn-danger" id="deleteMedBtn">🗑 削除する</button>
+        <button class="btn btn-outline" onclick="closeEditModal()">キャンセル</button>
     </div>
 </div>
 
-<!-- CSV繧､繝ｳ繝昴・繝医Δ繝ｼ繝繝ｫ -->
+<!-- CSVインポートモーダル -->
 <div class="modal-overlay" id="csvModal">
     <div class="modal">
         <div class="modal-handle"></div>
-        <h2>塘 CSV繧､繝ｳ繝昴・繝・/h2>
+        <h2>📄 CSVインポート</h2>
         <div id="csvStep1">
-            <!-- 繝・く繧ｹ繝郁ｲｼ繧贋ｻ倥￠・医せ繝槭・蜷代￠・・-->
+            <!-- テキスト貼り付け（スマホ向け） -->
             <div style="margin-bottom:12px;">
-                <div style="font-size:13px;font-weight:900;color:#38bdf8;margin-bottom:8px;">搭 繝・く繧ｹ繝医ｒ雋ｼ繧贋ｻ倥￠</div>
-                <textarea id="csvTextInput" style="width:100%;min-height:120px;resize:vertical;border:1.5px solid #334155;border-radius:10px;padding:10px;font-size:12px;font-family:'Noto Sans JP',monospace;background:#0f172a;color:#e2e8f0;line-height:1.5;" placeholder="縺薙％縺ｫCSV繝・く繧ｹ繝医ｒ雋ｼ繧贋ｻ倥￠&#10;&#10;萓・&#10;繝ｭ繧ｭ繧ｽ繝九Φ骭60mg,10,邂ｱ,2027-03-15,譽哂-1,蜀・恪阮ｬ&#10;繧ｫ繝ｭ繝翫・繝ｫ骭500,5,邂ｱ,2026-12-01,譽哂-2,蜀・恪阮ｬ"></textarea>
-                <button class="btn btn-primary" id="csvPasteBtn" style="margin-top:8px;">剥 雋ｼ繧贋ｻ倥￠縺溘ユ繧ｭ繧ｹ繝医ｒ隱ｭ縺ｿ霎ｼ繧</button>
+                <div style="font-size:13px;font-weight:900;color:#38bdf8;margin-bottom:8px;">📋 テキストを貼り付け</div>
+                <textarea id="csvTextInput" style="width:100%;min-height:120px;resize:vertical;border:1.5px solid #334155;border-radius:10px;padding:10px;font-size:12px;font-family:'Noto Sans JP',monospace;background:#0f172a;color:#e2e8f0;line-height:1.5;" placeholder="ここにCSVテキストを貼り付け&#10;&#10;例:&#10;ロキソニン錠60mg,10,箱,2027-03-15,棚A-1,内服薬&#10;カロナール錠500,5,箱,2026-12-01,棚A-2,内服薬"></textarea>
+                <button class="btn btn-primary" id="csvPasteBtn" style="margin-top:8px;">🔍 貼り付けたテキストを読み込む</button>
             </div>
 
-            <div style="text-align:center;color:#475569;font-size:12px;margin:8px 0;">笏笏 縺ｾ縺溘・ 笏笏</div>
+            <div style="text-align:center;color:#475569;font-size:12px;margin:8px 0;">── または ──</div>
 
-            <!-- 繝輔ぃ繧､繝ｫ驕ｸ謚・-->
+            <!-- ファイル選択 -->
             <div class="csv-dropzone" id="csvDropzone" style="padding:20px 16px;">
-                <div class="drop-icon" style="font-size:28px;margin-bottom:4px;">刀</div>
-                <div class="drop-text">CSV繝輔ぃ繧､繝ｫ繧帝∈謚・/div>
+                <div class="drop-icon" style="font-size:28px;margin-bottom:4px;">📁</div>
+                <div class="drop-text">CSVファイルを選択</div>
                 <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" style="display:none">
             </div>
 
             <div style="margin-top:12px;padding:12px;background:#0f172a;border-radius:10px;border:1px solid #334155;">
-                <div style="font-size:12px;font-weight:900;color:#94a3b8;margin-bottom:6px;">搭 CSV蠖｢蠑上↓縺､縺・※</div>
+                <div style="font-size:12px;font-weight:900;color:#94a3b8;margin-bottom:6px;">📋 CSV形式について</div>
                 <div style="font-size:11px;color:#64748b;line-height:1.7;">
-                    1陦檎岼縺ｯ繝倥ャ繝繝ｼ陦鯉ｼ郁・蜍募愛螳夲ｼ・br>
-                    <b style="color:#e2e8f0;">蠢・亥・:</b> 阮ｬ蜑､蜷・ 豸郁ｲｻ譛滄剞<br>
-                    <b style="color:#e2e8f0;">莉ｻ諢丞・:</b> 謨ｰ驥・ 蜊倅ｽ・ 菫晉ｮ｡蝣ｴ謇, 繧ｫ繝・ざ繝ｪ, 繝｡繝｢<br>
-                    譌･莉伜ｽ｢蠑・ 2026-04-01 / 2026/04/01 / 20260401 縺ｫ蟇ｾ蠢・
+                    1行目はヘッダー行（自動判定）<br>
+                    <b style="color:#e2e8f0;">必須列:</b> 薬剤名, 消費期限<br>
+                    <b style="color:#e2e8f0;">任意列:</b> 数量, 単位, 保管場所, カテゴリ, メモ<br>
+                    日付形式: 2026-04-01 / 2026/04/01 / 20260401 に対応
                 </div>
                 <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-                    <span class="csv-template-link" id="csvDownloadTemplate">踏 繝・Φ繝励Ξ繝ｼ繝医ｒ繝繧ｦ繝ｳ繝ｭ繝ｼ繝・/span>
-                    <span class="csv-template-link" id="csvCopyTemplate">搭 繝・Φ繝励Ξ繝ｼ繝医ｒ繧ｳ繝斐・</span>
+                    <span class="csv-template-link" id="csvDownloadTemplate">📥 テンプレートをダウンロード</span>
+                    <span class="csv-template-link" id="csvCopyTemplate">📋 テンプレートをコピー</span>
                 </div>
             </div>
-            <button class="btn btn-outline" onclick="closeCsvModal()">繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
+            <button class="btn btn-outline" onclick="closeCsvModal()">キャンセル</button>
         </div>
         <div id="csvStep2" class="hidden">
             <div class="csv-stats" id="csvStats"></div>
@@ -560,48 +559,48 @@
                 <table class="csv-preview-table" id="csvPreviewTable"></table>
             </div>
             <div id="csvErrors" style="margin-top:8px;"></div>
-            <button class="btn btn-success" id="csvImportBtn">笨・繧､繝ｳ繝昴・繝亥ｮ溯｡・/button>
-            <button class="btn btn-outline" id="csvBackBtn">竊・繝輔ぃ繧､繝ｫ繧貞､画峩</button>
-            <button class="btn btn-outline" onclick="closeCsvModal()">繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
+            <button class="btn btn-success" id="csvImportBtn">✅ インポート実行</button>
+            <button class="btn btn-outline" id="csvBackBtn">← ファイルを変更</button>
+            <button class="btn btn-outline" onclick="closeCsvModal()">キャンセル</button>
         </div>
         <div id="csvStep3" class="hidden" style="text-align:center;padding:20px 0;">
-            <div style="font-size:48px;margin-bottom:12px;">脂</div>
+            <div style="font-size:48px;margin-bottom:12px;">🎉</div>
             <div id="csvResultMsg" style="font-size:15px;font-weight:900;color:#34d399;margin-bottom:8px;"></div>
             <div id="csvResultErrors" style="font-size:12px;color:#f87171;margin-bottom:12px;"></div>
-            <button class="btn btn-primary" onclick="closeCsvModal(); refreshRoomData();">髢峨§繧・/button>
+            <button class="btn btn-primary" onclick="closeCsvModal(); refreshRoomData();">閉じる</button>
         </div>
     </div>
 </div>
 
-<!-- 繝医・繧ｹ繝・-->
+<!-- トースト -->
 <div class="toast" id="toast"></div>
 
 <script>
 (function() {
-    // === 繧医￥菴ｿ縺・脈蜑､蜷阪Μ繧ｹ繝・===
+    // === よく使う薬剤名リスト ===
     var commonMedicines = [
-        '繝ｭ繧ｭ繧ｽ繝九Φ骭60mg','繧ｫ繝ｭ繝翫・繝ｫ骭200','繧ｫ繝ｭ繝翫・繝ｫ骭500','繧｢繧ｻ繝医い繝溘ヮ繝輔ぉ繝ｳ','繧､繝悶・繝ｭ繝輔ぉ繝ｳ',
-        '繝繧ｳ繧ｹ繧ｿ骭100mg','繧ｬ繧ｹ繧ｿ繝ｼ骭20mg','繧ｿ繧ｱ繝励Ο繝ｳ','繝阪く繧ｷ繧ｦ繝','繝ｩ繝ｳ繧ｽ繝励Λ繧ｾ繝ｼ繝ｫ',
-        '繧｢繝繝ｭ繧ｸ繝斐Φ骭5mg','繝｡繝医・繝ｫ繝溘Φ','繧ｰ繝ｪ繝｡繝斐Μ繝・,'繝ｪ繝斐ヨ繝ｼ繝ｫ','繧ｯ繝ｬ繧ｹ繝医・繝ｫ',
-        '繝輔Ο繧ｻ繝溘ラ骭20mg','繝ｯ繝ｫ繝輔ぃ繝ｪ繝ｳ','繝舌う繧｢繧ｹ繝斐Μ繝ｳ','繧ｯ繝ｭ繝斐ラ繧ｰ繝ｬ繝ｫ',
-        '繝ｬ繝舌Α繝斐ラ骭100mg','繝・・繝ｬ繝弱Φ','繝輔ぃ繝｢繝√ず繝ｳ','繝ｩ繝吶・繝ｩ繧ｾ繝ｼ繝ｫ',
-        '繝｡繝√さ繝舌・繝ｫ骭500','繝薙ち繝｡繧ｸ繝ｳ','繧ｷ繝翫・繝ｫ','繝薙ち繝溘ΦC','繝薙ち繝溘ΦB12',
-        '繝励Ξ繝峨ル繧ｾ繝ｭ繝ｳ骭5mg','繝・く繧ｵ繝｡繧ｿ繧ｾ繝ｳ','繝吶ち繝｡繧ｿ繧ｾ繝ｳ',
-        '繧ｻ繝輔き繝壹Φ繝斐・繧ｭ繧ｷ繝ｫ','繧｢繝｢繧ｭ繧ｷ繧ｷ繝ｪ繝ｳ','繧ｯ繝ｩ繝ｪ繧ｹ繝ｭ繝槭う繧ｷ繝ｳ','繝ｬ繝懊ヵ繝ｭ繧ｭ繧ｵ繧ｷ繝ｳ','繧｢繧ｸ繧ｹ繝ｭ繝槭う繧ｷ繝ｳ',
-        '繝・ヱ繧ｹ骭0.5mg','繝ｪ繝ｼ繧ｼ骭5mg','繝上Ν繧ｷ繧ｪ繝ｳ','繝槭う繧ｹ繝ｪ繝ｼ','繝ｬ繝ｳ繝峨Ν繝溘Φ',
-        '繝ｪ繝ｳ繝・Ο繝ｳVG霆溯・','繝偵Ν繝峨う繝峨た繝輔ヨ霆溯・','繧ｲ繝ｳ繧ｿ繧ｷ繝ｳ霆溯・','繧｢繧ｺ繝弱・繝ｫ霆溯・',
-        '繝代ち繝弱・繝ｫ轤ｹ逵ｼ豸ｲ','繝繧ｳ繧ｹ繧ｿ轤ｹ逵ｼ豸ｲ',
-        '繝・Β繝ｩ闡帶ｹ貉ｯ','繝・Β繝ｩ闃崎脈逕倩拷貉ｯ','繝・Β繝ｩ陬應ｸｭ逶頑ｰ玲ｹｯ','繝・Β繝ｩ螟ｧ蟒ｺ荳ｭ貉ｯ',
-        '繧､繝ｳ繧ｹ繝ｪ繝ｳ','繝倥ヱ繝ｪ繝ｳ繝翫ヨ繝ｪ繧ｦ繝','逕溽炊鬟溷｡ｩ豌ｴ','繝悶ラ繧ｦ邉匁ｳｨ蟆・ｶｲ',
-        '繧､繧ｽ繧ｸ繝ｳ','繝偵ン繝・Φ','豸域ｯ堤畑繧ｨ繧ｿ繝弱・繝ｫ','繧ｪ繧ｭ繧ｷ繝峨・繝ｫ',
-        '繧ｵ繝ｼ繧ｸ繧ｫ繝ｫ繝・・繝・,'繧ｬ繝ｼ繧ｼ','邨・卸閹・,'豕ｨ蟆・・','繧ｷ繝ｪ繝ｳ繧ｸ','謇玖｢・,
-        '繧｢繝ｬ繧ｰ繝ｩ骭60mg','繧｢繝ｬ繧ｸ繧ｪ繝ｳ','繧ｶ繧､繧ｶ繝ｫ','繝｢繝ｳ繝・Ν繧ｫ繧ｹ繝・,
-        '繝｡繝医け繝ｭ繝励Λ繝溘ラ','繝峨Φ繝壹Μ繝峨Φ','繝翫え繧ｼ繝ｪ繝ｳ',
-        '繝医Λ繝阪く繧ｵ繝驟ｸ','繧｢繝峨Ξ繝翫Μ繝ｳ','繧｢繝医Ο繝斐Φ',
-        '繧ｸ繧ｯ繝ｭ繝輔ぉ繝翫けNa繝・・繝・,'繝｢繝ｼ繝ｩ繧ｹ繝・・繝・,'繝ｭ繧ｭ繧ｽ繝九Φ繝・・繝・,
-        'SP繝医Ο繝ｼ繝・,'繝輔ぅ繝九ャ繧ｷ繝･繧ｳ繝ｼ繝ｯ',
+        'ロキソニン錠60mg','カロナール錠200','カロナール錠500','アセトアミノフェン','イブプロフェン',
+        'ムコスタ錠100mg','ガスター錠20mg','タケプロン','ネキシウム','ランソプラゾール',
+        'アムロジピン錠5mg','メトホルミン','グリメピリド','リピトール','クレストール',
+        'フロセミド錠20mg','ワルファリン','バイアスピリン','クロピドグレル',
+        'レバミピド錠100mg','テプレノン','ファモチジン','ラベプラゾール',
+        'メチコバール錠500','ビタメジン','シナール','ビタミンC','ビタミンB12',
+        'プレドニゾロン錠5mg','デキサメタゾン','ベタメタゾン',
+        'セフカペンピボキシル','アモキシシリン','クラリスロマイシン','レボフロキサシン','アジスロマイシン',
+        'デパス錠0.5mg','リーゼ錠5mg','ハルシオン','マイスリー','レンドルミン',
+        'リンデロンVG軟膏','ヒルドイドソフト軟膏','ゲンタシン軟膏','アズノール軟膏',
+        'パタノール点眼液','ムコスタ点眼液',
+        'ツムラ葛根湯','ツムラ芍薬甘草湯','ツムラ補中益気湯','ツムラ大建中湯',
+        'インスリン','ヘパリンナトリウム','生理食塩水','ブドウ糖注射液',
+        'イソジン','ヒビテン','消毒用エタノール','オキシドール',
+        'サージカルテープ','ガーゼ','絆創膏','注射針','シリンジ','手袋',
+        'アレグラ錠60mg','アレジオン','ザイザル','モンテルカスト',
+        'メトクロプラミド','ドンペリドン','ナウゼリン',
+        'トラネキサム酸','アドレナリン','アトロピン',
+        'ジクロフェナクNaテープ','モーラステープ','ロキソニンテープ',
+        'SPトローチ','フィニッシュコーワ',
     ];
-    // 縺ｲ繧峨′縺ｪ竍斐き繧ｿ繧ｫ繝雁､画鋤
+    // ひらがな⇔カタカナ変換
     function hiraganaToKatakana(str) {
         return str.replace(/[\u3041-\u3096]/g, function(c) { return String.fromCharCode(c.charCodeAt(0) + 0x60); });
     }
@@ -612,26 +611,26 @@
     var roomId = null;
     var roomData = null;
     var myName = localStorage.getItem('med_myName') || '';
-    // 繝・ヰ繧､繧ｹID逕滓・・育ｫｯ譛ｫ繧剃ｸ諢上↓隴伜挨・・
+    // デバイスID生成（端末を一意に識別）
     var deviceId = localStorage.getItem('med_deviceId') || '';
     if (!deviceId) {
         deviceId = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
         localStorage.setItem('med_deviceId', deviceId);
     }
-    // 蛻晏屓繧｢繧ｯ繧ｻ繧ｹ譎ゅ↓蜷榊燕繧定◇縺・
+    // 初回アクセス時に名前を聞く
     if (!myName) {
-        myName = prompt('縺ゅ↑縺溘・蜷榊燕繧貞・蜉帙＠縺ｦ縺上□縺輔＞・育ｫｯ譛ｫ縺ｫ菫晏ｭ倥＆繧後∪縺呻ｼ・) || '';
+        myName = prompt('あなたの名前を入力してください（端末に保存されます）') || '';
         if (myName) localStorage.setItem('med_myName', myName);
     }
-    // 蜷榊燕螟画峩髢｢謨ｰ
+    // 名前変更関数
     window.changeMyName = function() {
-        var n = prompt('蜷榊燕繧貞､画峩', myName);
+        var n = prompt('名前を変更', myName);
         if (n !== null && n.trim()) {
             myName = n.trim();
             localStorage.setItem('med_myName', myName);
             var el = document.getElementById('myNameLabel');
-            if (el) el.textContent = '側 ' + myName;
-            showToast('蜷榊燕繧偵・ + myName + '縲阪↓螟画峩縺励∪縺励◆');
+            if (el) el.textContent = '👤 ' + myName;
+            showToast('名前を「' + myName + '」に変更しました');
         }
     };
     var currentFilter = 'all';
@@ -646,7 +645,7 @@
     var roomView = document.getElementById('roomView');
     var fabBtn = document.getElementById('fabBtn');
 
-    // === 繝ｦ繝ｼ繝・ぅ繝ｪ繝・ぅ ===
+    // === ユーティリティ ===
     function showToast(msg) {
         var t = document.getElementById('toast');
         t.textContent = msg;
@@ -666,18 +665,18 @@
         xhr.send(data ? JSON.stringify(data) : null);
     }
 
-    // === 豸郁ｲｻ譛滄剞繧ｹ繝・・繧ｿ繧ｹ ===
+    // === 消費期限ステータス ===
     function getExpiryStatus(dateStr) {
-        if (!dateStr) return { status: 'unknown', label: '荳肴・', days: null };
+        if (!dateStr) return { status: 'unknown', label: '不明', days: null };
         var today = new Date();
         today.setHours(0,0,0,0);
         var exp = new Date(dateStr);
         exp.setHours(0,0,0,0);
         var diff = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
-        if (diff < 0) return { status: 'danger', label: Math.abs(diff) + '譌･雜・℃', days: diff };
-        if (diff === 0) return { status: 'danger', label: '莉頑律縺ｾ縺ｧ', days: 0 };
-        if (diff <= 30) return { status: 'warn', label: '縺ゅ→' + diff + '譌･', days: diff };
-        return { status: 'safe', label: diff + '譌･蠕・, days: diff };
+        if (diff < 0) return { status: 'danger', label: Math.abs(diff) + '日超過', days: diff };
+        if (diff === 0) return { status: 'danger', label: '今日まで', days: 0 };
+        if (diff <= 30) return { status: 'warn', label: 'あと' + diff + '日', days: diff };
+        return { status: 'safe', label: diff + '日後', days: diff };
     }
 
     function formatDate(dateStr) {
@@ -686,7 +685,7 @@
         return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate();
     }
 
-    // === 螻･豁ｴ邂｡逅・===
+    // === 履歴管理 ===
     function getHistory() {
         try { return JSON.parse(localStorage.getItem('med_history') || '[]'); } catch(e) { return []; }
     }
@@ -715,6 +714,7 @@
                 var row = document.createElement('div');
                 row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
 
+                var card = document.createElement('a');
                 // 選択モード時のチェックボックス
                 if (clinicSelectMode) {
                     var cbWrap = document.createElement('label');
@@ -759,7 +759,7 @@
                 card.appendChild(info);
                 card.appendChild(arrow);
 
-                // 蜑企勁繝懊ち繝ｳ・育ｮ｡逅・ｺｺ縺ｮ縺ｿ繧ｵ繝ｼ繝舌・蜑企勁縲√◎繧御ｻ･螟悶・繝ｭ繝ｼ繧ｫ繝ｫ螻･豁ｴ蜑企勁・・
+                // 削除ボタン（管理人のみサーバー削除、それ以外はローカル履歴削除）
                 var delBtn = document.createElement('button');
                 delBtn.style.cssText = 'width:36px;height:36px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#f87171;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;';
                 delBtn.textContent = '\ud83d\uddd1\ufe0f';
@@ -769,11 +769,11 @@
                 delBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    // 縺ｾ縺壹Ν繝ｼ繝諠・ｱ繧貞叙蠕励＠縺ｦ邂｡逅・ｺｺ縺九メ繧ｧ繝・け
+                    // まずルーム情報を取得して管理人かチェック
                     apiCall('GET', '/api/room/' + h.id + '?deviceId=' + encodeURIComponent(deviceId), null, function(st, rd) {
                         if (st === 200 && rd) {
                             if (typeof rd === 'string') rd = JSON.parse(rd);
-                            // 邂｡逅・ｺｺ蛻､螳・ myName荳閾ｴ or 繝ｫ繝ｼ繝蛻･蜷榊燕荳閾ｴ or deviceId縺ｧ邏蝉ｻ倥＞縺溘Γ繝ｳ繝舌・蜷阪′admin荳閾ｴ
+                            // 管理人判定: myName一致 or ルーム別名前一致 or deviceIdで紐付いたメンバー名がadmin一致
                             var roomName = '';
                             try { roomName = localStorage.getItem('med_name_' + h.id) || ''; } catch(e) {}
                             var isAdmin = rd.admin === myName || (roomName && rd.admin === roomName);
@@ -782,40 +782,40 @@
                                 if (myMember && myMember.name === rd.admin) isAdmin = true;
                             }
                             if (isAdmin) {
-                                // === 邂｡逅・ｺｺ: 莠碁㍾遒ｺ隱阪〒螳悟・蜑企勁 ===
-                                // 1蝗樒岼: 蝓ｺ譛ｬ遒ｺ隱・
-                                var first = confirm('笞・・邂｡逅・ｺｺ縺ｨ縺励※縲・ + h.name + '縲阪ｒ螳悟・縺ｫ蜑企勁縺励∪縺吶°・歃n\n縺薙・謫堺ｽ懊・蜿悶ｊ豸医○縺ｾ縺帙ｓ縲・n蜈ｨ繧ｹ繧ｿ繝・ヵ縺ｮ繝・・繧ｿ繧よｶ医∴縺ｾ縺吶・);
+                                // === 管理人: 二重確認で完全削除 ===
+                                // 1回目: 基本確認
+                                var first = confirm('⚠️ 管理人として「' + h.name + '」を完全に削除しますか？\n\nこの操作は取り消せません。\n全スタッフのデータも消えます。');
                                 if (!first) return;
-                                // 2蝗樒岼: 譛邨ら｢ｺ隱搾ｼ医け繝ｪ繝九ャ繧ｯ蜷阪ｒ蜈･蜉帙＆縺帙ｋ・・
-                                var inputName = prompt('譛ｬ蠖薙↓螳悟・蜑企勁縺励∪縺吶°・歃n\n遒ｺ隱阪・縺溘ａ繧ｯ繝ｪ繝九ャ繧ｯ蜷阪・ + h.name + '縲阪ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞:');
+                                // 2回目: 最終確認（クリニック名を入力させる）
+                                var inputName = prompt('本当に完全削除しますか？\n\n確認のためクリニック名「' + h.name + '」を入力してください:');
                                 if (inputName === null) return;
                                 if (inputName.trim() !== h.name.trim()) {
-                                    alert('蜈･蜉帙＆繧後◆蜷榊燕縺御ｸ閾ｴ縺励∪縺帙ｓ縲ょ炎髯､繧剃ｸｭ豁｢縺励∪縺励◆縲・);
+                                    alert('入力された名前が一致しません。削除を中止しました。');
                                     return;
                                 }
                                 apiCall('POST', '/api/room/' + h.id + '/delete-room', { requestBy: rd.admin }, function(ds, dd) {
                                     if (ds === 200) {
                                         removeFromHistory(h.id);
                                         renderHistory();
-                                        showToast('卵 繧ｯ繝ｪ繝九ャ繧ｯ繧貞ｮ悟・縺ｫ蜑企勁縺励∪縺励◆');
+                                        showToast('🗑 クリニックを完全に削除しました');
                                     } else {
-                                        alert('蜑企勁縺ｫ螟ｱ謨励＠縺ｾ縺励◆: ' + (dd ? dd.error : ''));
+                                        alert('削除に失敗しました: ' + (dd ? dd.error : ''));
                                     }
                                 });
                             } else {
-                                // 繧ｹ繧ｿ繝・ヵ: 繝ｪ繧ｹ繝医°繧蛾撼陦ｨ遉ｺ縺ｮ縺ｿ
-                                if (confirm('縲・ + h.name + '縲阪ｒ繝ｪ繧ｹ繝医°繧牙炎髯､縺励∪縺吶°・歃n・医け繝ｪ繝九ャ繧ｯ閾ｪ菴薙・谿九ｊ縺ｾ縺呻ｼ・)) {
+                                // スタッフ: リストから非表示のみ
+                                if (confirm('「' + h.name + '」をリストから削除しますか？\n（クリニック自体は残ります）')) {
                                     removeFromHistory(h.id);
                                     renderHistory();
-                                    showToast('\ud83d\uddd1\ufe0f 繝ｪ繧ｹ繝医°繧牙炎髯､縺励∪縺励◆');
+                                    showToast('\ud83d\uddd1\ufe0f リストから削除しました');
                                 }
                             }
                         } else {
-                            // 繝ｫ繝ｼ繝縺瑚ｦ九▽縺九ｉ縺ｪ縺・ｴ蜷医・螻･豁ｴ縺縺大炎髯､
-                            if (confirm('縲・ + h.name + '縲阪ｒ繝ｪ繧ｹ繝医°繧牙炎髯､縺励∪縺吶°・・)) {
+                            // ルームが見つからない場合は履歴だけ削除
+                            if (confirm('「' + h.name + '」をリストから削除しますか？')) {
                                 removeFromHistory(h.id);
                                 renderHistory();
-                                showToast('\ud83d\uddd1\ufe0f 蜑企勁縺励∪縺励◆');
+                                showToast('\ud83d\uddd1\ufe0f 削除しました');
                             }
                         }
                     });
@@ -828,7 +828,7 @@
         }
     }
 
-    // === 邉ｻ蛻励げ繝ｫ繝ｼ繝礼ｮ｡逅・ｼ郁､・焚繧ｰ繝ｫ繝ｼ繝怜ｯｾ蠢懶ｼ・===
+    // === 系列グループ管理（複数グループ対応） ===
     var currentGroupId = null;
     var clinicSelectMode = false;
     var selectedClinicIds = new Set();
@@ -849,7 +849,7 @@
     function addGroupId(gid) { var ids = getGroupIds(); if (ids.indexOf(gid) === -1) { ids.push(gid); saveGroupIds(ids); } }
     function removeGroupId(gid) { saveGroupIds(getGroupIds().filter(function(id) { return id !== gid; })); }
 
-    // 繧ｯ繝ｪ繝九ャ繧ｯ驕ｸ謚槭Δ繝ｼ繝牙・譖ｿ
+    // クリニック選択モード切替
     window.toggleClinicSelect = function() {
         clinicSelectMode = !clinicSelectMode;
         selectedClinicIds.clear();
@@ -857,12 +857,12 @@
         var btn = document.getElementById('toggleSelectMode');
         if (clinicSelectMode) {
             bar.classList.remove('hidden');
-            btn.textContent = '笨・隗｣髯､';
+            btn.textContent = '✕ 解除';
             btn.style.color = '#f87171';
             btn.style.borderColor = '#f87171';
         } else {
             bar.classList.add('hidden');
-            btn.textContent = '笘托ｸ・驕ｸ謚・;
+            btn.textContent = '☑️ 選択';
             btn.style.color = '';
             btn.style.borderColor = '';
         }
@@ -872,21 +872,20 @@
 
     function updateSelectCount() {
         var el = document.getElementById('selectCount');
-        if (el) el.textContent = selectedClinicIds.size + '莉ｶ驕ｸ謚樔ｸｭ';
+        if (el) el.textContent = selectedClinicIds.size + '件選択中';
     }
 
     window.toggleClinicCheck = function(id) {
         if (selectedClinicIds.has(id)) selectedClinicIds.delete(id);
         else selectedClinicIds.add(id);
         updateSelectCount();
-        // 繝√ぉ繝・け繝懊ャ繧ｯ繧ｹ繝薙ず繝･繧｢繝ｫ譖ｴ譁ｰ
         var cb = document.getElementById('cb_' + id);
         if (cb) cb.checked = selectedClinicIds.has(id);
     };
 
     window.createGroupFromSelected = function() {
-        if (selectedClinicIds.size < 1) { showToast('繧ｯ繝ｪ繝九ャ繧ｯ繧帝∈謚槭＠縺ｦ縺上□縺輔＞'); return; }
-        var name = prompt('邉ｻ蛻励げ繝ｫ繝ｼ繝怜錐繧貞・蜉帙＠縺ｦ縺上□縺輔＞\n・井ｾ・ 笳銀雷蛹ｻ逋ゅげ繝ｫ繝ｼ繝暦ｼ・);
+        if (selectedClinicIds.size < 1) { showToast('クリニックを選択してください'); return; }
+        var name = prompt('系列グループ名を入力してください\n（例: ○○医療グループ）');
         if (!name || !name.trim()) return;
         apiCall('POST', '/api/group/create', { name: name.trim(), createdBy: myName }, function(st, data) {
             if (st === 200 && data) {
@@ -897,13 +896,13 @@
                     apiCall('POST', '/api/group/' + data.groupId + '/add-room', { roomId: ids[i] }, function() {
                         done++;
                         if (done >= ids.length) {
-                            showToast('笨・繧ｰ繝ｫ繝ｼ繝励・ + name.trim() + '縲阪ｒ' + ids.length + '髯｢縺ｧ菴懈・縺励∪縺励◆');
+                            showToast('✅ グループ「' + name.trim() + '」を' + ids.length + '院で作成しました');
                             toggleClinicSelect();
                             renderGroupSection();
                         }
                     });
                 }
-            } else { alert('繧ｰ繝ｫ繝ｼ繝嶺ｽ懈・縺ｫ螟ｱ謨励＠縺ｾ縺励◆'); }
+            } else { alert('グループ作成に失敗しました'); }
         });
     };
 
@@ -915,7 +914,7 @@
         var groupIds = getGroupIds();
         if (groupIds.length === 0) {
             dashSection.classList.add('hidden');
-            listSection.innerHTML = '<div style="font-size:12px;color:#64748b;line-height:1.6;">邉ｻ蛻励・繧ｯ繝ｪ繝九ャ繧ｯ髢薙〒蝨ｨ蠎ｫ繧呈ｨｪ譁ｭ逧・↓遒ｺ隱阪〒縺阪∪縺吶・br>荳翫・繧ｯ繝ｪ繝九ャ繧ｯ荳隕ｧ縺九ｉ縲娯・・・驕ｸ謚槭阪〒繧ｰ繝ｫ繝ｼ繝怜喧縺ｧ縺阪∪縺吶・/div>';
+            listSection.innerHTML = '<div style="font-size:12px;color:#64748b;line-height:1.6;">系列のクリニック間で在庫を横断的に確認できます。<br>上のクリニック一覧から「☑️ 選択」でグループ化できます。</div>';
             return;
         }
         dashSection.classList.remove('hidden');
@@ -927,23 +926,20 @@
                 apiCall('GET', '/api/group/' + gid, null, function(st, group) {
                     pending--;
                     if (st === 200 && group) {
-                        // 繝繝・す繝･繝懊・繝峨・繧ｿ繝ｳ
                         var btn = document.createElement('button');
                         btn.style.cssText = 'background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;width:100%;margin-bottom:6px;padding:12px;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;';
-                        btn.innerHTML = '<span>投 ' + group.name + '</span><span style="font-size:11px;opacity:0.7;">' + (group.roomIds || []).length + '髯｢</span>';
+                        btn.innerHTML = '<span>📊 ' + group.name + '</span><span style="font-size:11px;opacity:0.7;">' + (group.roomIds || []).length + '院</span>';
                         btn.addEventListener('click', function() { openDashboard(gid); });
                         dashList.appendChild(btn);
-                        // 邂｡逅・き繝ｼ繝・
                         var card = document.createElement('div');
                         card.style.cssText = 'padding:10px;background:#0f172a;border:1px solid #334155;border-radius:10px;margin-bottom:8px;';
-                        card.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div style="font-size:13px;color:#a78bfa;font-weight:900;">召 ' + group.name + '</div><span style="font-size:10px;color:#64748b;">' + (group.roomIds||[]).length + '髯｢</span></div>' +
-                            '<div style="font-size:10px;color:#475569;">ID: <span style="font-family:monospace;color:#94a3b8;cursor:pointer;" onclick="copyGid(\'' + gid + '\')">' + gid + '</span> 搭</div>' +
-                            '<div style="display:flex;gap:4px;margin-top:6px;"><button class="btn btn-outline" style="font-size:10px;padding:4px 8px;" onclick="manageGroupClinics(\'' + gid + '\')">唱 繧ｯ繝ｪ繝九ャ繧ｯ邂｡逅・/button><button class="btn btn-outline" style="font-size:10px;padding:4px 8px;color:#f87171;border-color:#f87171;" onclick="leaveGroup(\'' + gid + '\')">髮｢閼ｱ</button></div>';
+                        card.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div style="font-size:13px;color:#a78bfa;font-weight:900;">🏢 ' + group.name + '</div><span style="font-size:10px;color:#64748b;">' + (group.roomIds||[]).length + '院</span></div>' +
+                            '<div style="font-size:10px;color:#475569;">ID: <span style="font-family:monospace;color:#94a3b8;cursor:pointer;" onclick="copyGid(\'' + gid + '\')">' + gid + '</span> 📋</div>' +
+                            '<div style="display:flex;gap:4px;margin-top:6px;"><button class="btn btn-outline" style="font-size:10px;padding:4px 8px;" onclick="manageGroupClinics(\'' + gid + '\')">🏥 クリニック管理</button><button class="btn btn-outline" style="font-size:10px;padding:4px 8px;color:#f87171;border-color:#f87171;" onclick="leaveGroup(\'' + gid + '\')">離脱</button></div>';
                         listSection.appendChild(card);
                     } else if (st === 404) {
                         removeGroupId(gid);
                     }
-                    // 蜈ｨAPI螳御ｺ・ｾ後↓繧ｰ繝ｫ繝ｼ繝・縺ｪ繧蛾撼陦ｨ遉ｺ
                     if (pending === 0 && dashList.children.length === 0) {
                         dashSection.classList.add('hidden');
                     }
@@ -952,54 +948,54 @@
         }
     }
     window.createGroup = function() {
-        var name = prompt('邉ｻ蛻励げ繝ｫ繝ｼ繝怜錐繧貞・蜉帙＠縺ｦ縺上□縺輔＞\n・井ｾ・ 笳銀雷蛹ｻ逋ゅげ繝ｫ繝ｼ繝暦ｼ・);
+        var name = prompt('系列グループ名を入力してください\n（例: ○○医療グループ）');
         if (!name || !name.trim()) return;
         apiCall('POST', '/api/group/create', { name: name.trim(), createdBy: myName }, function(st, data) {
             if (st === 200 && data) {
                 addGroupId(data.groupId);
-                showToast('笨・繧ｰ繝ｫ繝ｼ繝励・ + name.trim() + '縲阪ｒ菴懈・縺励∪縺励◆');
+                showToast('✅ グループ「' + name.trim() + '」を作成しました');
                 var history = getHistory();
-                if (history.length > 0 && confirm('逋ｻ骭ｲ貂医∩縺ｮ' + history.length + '莉ｶ縺ｮ繧ｯ繝ｪ繝九ャ繧ｯ繧偵げ繝ｫ繝ｼ繝励↓霑ｽ蜉縺励∪縺吶°・・)) {
+                if (history.length > 0 && confirm('登録済みの' + history.length + '件のクリニックをグループに追加しますか？')) {
                     for (var i = 0; i < history.length; i++) {
                         apiCall('POST', '/api/group/' + data.groupId + '/add-room', { roomId: history[i].id }, function() {});
                     }
                 }
                 setTimeout(renderGroupSection, 600);
-            } else { alert('繧ｰ繝ｫ繝ｼ繝嶺ｽ懈・縺ｫ螟ｱ謨励＠縺ｾ縺励◆'); }
+            } else { alert('グループ作成に失敗しました'); }
         });
     };
     window.joinGroup = function() {
-        var gid = prompt('蜿ょ刈縺吶ｋ繧ｰ繝ｫ繝ｼ繝悠D繧貞・蜉帙＠縺ｦ縺上□縺輔＞');
+        var gid = prompt('参加するグループIDを入力してください');
         if (!gid || !gid.trim()) return;
         apiCall('GET', '/api/group/' + gid.trim(), null, function(st, data) {
             if (st === 200 && data) {
                 addGroupId(gid.trim());
-                showToast('笨・繧ｰ繝ｫ繝ｼ繝励・ + data.name + '縲阪↓蜿ょ刈縺励∪縺励◆');
+                showToast('✅ グループ「' + data.name + '」に参加しました');
                 setTimeout(renderGroupSection, 600);
-            } else { alert('繧ｰ繝ｫ繝ｼ繝励′隕九▽縺九ｊ縺ｾ縺帙ｓ縲・D繧堤｢ｺ隱阪＠縺ｦ縺上□縺輔＞縲・); }
+            } else { alert('グループが見つかりません。IDを確認してください。'); }
         });
     };
     window.leaveGroup = function(gid) {
-        if (!confirm('縺薙・繧ｰ繝ｫ繝ｼ繝励°繧蛾屬閼ｱ縺励∪縺吶°・・)) return;
+        if (!confirm('このグループから離脱しますか？')) return;
         removeGroupId(gid);
-        showToast('繧ｰ繝ｫ繝ｼ繝励°繧蛾屬閼ｱ縺励∪縺励◆');
+        showToast('グループから離脱しました');
         renderGroupSection();
     };
     window.copyGid = function(gid) {
-        if (navigator.clipboard) { navigator.clipboard.writeText(gid).then(function() { showToast('搭 繧ｰ繝ｫ繝ｼ繝悠D繧偵さ繝斐・縺励∪縺励◆'); }); }
+        if (navigator.clipboard) { navigator.clipboard.writeText(gid).then(function() { showToast('📋 グループIDをコピーしました'); }); }
     };
     window.manageGroupClinics = function(gid) {
         apiCall('GET', '/api/group/' + gid, null, function(st, group) {
             if (st !== 200 || !group) return;
             var history = getHistory();
             var notJoined = history.filter(function(h) { return !(group.roomIds || []).includes(h.id); });
-            if (notJoined.length === 0) { showToast('霑ｽ蜉蜿ｯ閭ｽ縺ｪ繧ｯ繝ｪ繝九ャ繧ｯ縺ｯ縺ゅｊ縺ｾ縺帙ｓ'); return; }
-            var msg = '霑ｽ蜉縺吶ｋ繧ｯ繝ｪ繝九ャ繧ｯ繧帝∈謚・\n';
+            if (notJoined.length === 0) { showToast('追加可能なクリニックはありません'); return; }
+            var msg = '追加するクリニックを選択:\n';
             for (var i = 0; i < notJoined.length; i++) msg += (i+1) + '. ' + notJoined[i].name + '\n';
-            msg += '\n逡ｪ蜿ｷ繧貞・蜉幢ｼ医き繝ｳ繝槫玄蛻・ｊ縺ｧ隍・焚蜿ｯ・・;
+            msg += '\n番号を入力（カンマ区切りで複数可）';
             var input = prompt(msg);
             if (!input) return;
-            var nums = input.split(/[,縲―s]+/);
+            var nums = input.split(/[,、\s]+/);
             for (var n = 0; n < nums.length; n++) {
                 var idx = parseInt(nums[n]) - 1;
                 if (idx >= 0 && idx < notJoined.length) {
@@ -1007,7 +1003,11 @@
                 }
             }
             setTimeout(renderGroupSection, 500);
-    // === 繝繝・す繝･繝懊・繝・===
+            showToast('✅ クリニックを追加しました');
+        });
+    };
+
+    // === ダッシュボード ===
     var dashData = null;
     var dashSearch = '';
     var dashCatFilter = 'all';
@@ -1018,14 +1018,17 @@
         currentGroupId = gid;
         document.getElementById('topView').classList.add('hidden');
         document.getElementById('dashView').classList.remove('hidden');
-        document.getElementById('headerTitle').textContent = '\ud83d\udcca \u7cfb\u5217\u5728\u5eab\u30c0\u30c3\u30b7\u30e5\u30dc\u30fc\u30c9';
+        document.getElementById('headerTitle').textContent = '📊 系列在庫ダッシュボード';
         loadDashboard();
     };
     document.getElementById('backFromDash').addEventListener('click', function() {
         document.getElementById('dashView').classList.add('hidden');
         document.getElementById('topView').classList.remove('hidden');
-        document.getElementById('headerTitle').textContent = '\ud83d\udc8a \u85ac\u5264\u5728\u5eab\u30de\u30cd\u30fc\u30b8\u30e3\u30fc';
+        document.getElementById('headerTitle').textContent = '💊 薬剤在庫マネージャー';
     });
+
+
+
 
     document.getElementById('dashSearch').addEventListener('input', function() {
         dashSearch = this.value.trim();
@@ -1059,23 +1062,23 @@
         apiCall('GET', '/api/group/' + currentGroupId + '/dashboard', null, function(st, data) {
             if (st === 200 && data) {
                 dashData = data;
-                document.getElementById('dashGroupName').textContent = data.groupName || '邉ｻ蛻怜惠蠎ｫ';
-                document.getElementById('dashClinicList').textContent = (data.clinics || []).map(function(c) { return '唱 ' + c.name; }).join('縲');
-                // 繧ｫ繝・ざ繝ｪ繧ｿ繝也函謌・
+                document.getElementById('dashGroupName').textContent = data.groupName || '系列在庫';
+                document.getElementById('dashClinicList').textContent = (data.clinics || []).map(function(c) { return '🏥 ' + c.name; }).join('　');
+                // カテゴリタブ生成
                 var cats = {};
                 for (var i = 0; i < data.medicines.length; i++) {
                     var cat = data.medicines[i].category || '';
                     if (cat) cats[cat] = true;
                 }
                 var catTabsEl = document.getElementById('dashCatTabs');
-                catTabsEl.innerHTML = '<div class="filter-tab active" data-cat="all">蜈ｨ繧ｫ繝・ざ繝ｪ</div>';
+                catTabsEl.innerHTML = '<div class="filter-tab active" data-cat="all">全カテゴリ</div>';
                 var catKeys = Object.keys(cats).sort();
                 for (var c = 0; c < catKeys.length; c++) {
                     catTabsEl.innerHTML += '<div class="filter-tab" data-cat="' + catKeys[c] + '">' + catKeys[c] + '</div>';
                 }
                 renderDashboard();
             } else {
-                alert('繝繝・す繝･繝懊・繝峨・隱ｭ縺ｿ霎ｼ縺ｿ縺ｫ螟ｱ謨励＠縺ｾ縺励◆');
+                alert('ダッシュボードの読み込みに失敗しました');
             }
         });
     }
@@ -1089,16 +1092,16 @@
 
         var meds = dashData.medicines.slice();
 
-        // 讀懃ｴ｢
+        // 検索
         if (dashSearch) {
             var q = dashSearch.toLowerCase();
             meds = meds.filter(function(m) { return m.name.toLowerCase().indexOf(q) >= 0; });
         }
-        // 繧ｫ繝・ざ繝ｪ繝輔ぅ繝ｫ繧ｿ繝ｼ
+        // カテゴリフィルター
         if (dashCatFilter !== 'all') {
             meds = meds.filter(function(m) { return m.category === dashCatFilter; });
         }
-        // 繧ｹ繝・・繧ｿ繧ｹ繝輔ぅ繝ｫ繧ｿ繝ｼ・壼推阮ｬ蜑､縺ｮ繧ｯ繝ｪ繝九ャ繧ｯ諠・ｱ繧定ｩ穂ｾ｡
+        // ステータスフィルター：各薬剤のクリニック情報を評価
         if (dashStatusFilter !== 'all') {
             meds = meds.filter(function(m) {
                 return m.clinics.some(function(cl) {
@@ -1108,7 +1111,7 @@
                 });
             });
         }
-        // 繧ｽ繝ｼ繝・
+        // ソート
         meds.sort(function(a, b) {
             if (dashSortMode === 'name') return a.name.localeCompare(b.name);
             if (dashSortMode === 'qty') {
@@ -1116,14 +1119,14 @@
                 var bq = b.clinics.reduce(function(s, c) { return s + c.quantity; }, 0);
                 return aq - bq;
             }
-            // expiry: 譛繧りｿ代＞譛滄剞鬆・
+            // expiry: 最も近い期限順
             var ae = '9999'; var be = '9999';
             for (var i = 0; i < a.clinics.length; i++) { if (a.clinics[i].expiryDate && a.clinics[i].expiryDate < ae) ae = a.clinics[i].expiryDate; }
             for (var j = 0; j < b.clinics.length; j++) { if (b.clinics[j].expiryDate && b.clinics[j].expiryDate < be) be = b.clinics[j].expiryDate; }
             return ae.localeCompare(be);
         });
 
-        // 繧ｵ繝槭Μ繝ｼ
+        // サマリー
         var totalMeds = dashData.medicines.length;
         var dangerCount = 0; var warnCount = 0; var outCount = 0;
         for (var si = 0; si < dashData.medicines.length; si++) {
@@ -1136,10 +1139,10 @@
             }
         }
         summary.innerHTML =
-            '<div class="dash-summary-item" style="color:#f1f5f9;">抽 阮ｬ蜑､ <b>' + totalMeds + '</b>遞ｮ</div>' +
-            '<div class="dash-summary-item" style="color:#f87171;">閥 譛滄剞蛻・ｌ <b>' + dangerCount + '</b></div>' +
-            '<div class="dash-summary-item" style="color:#fbbf24;">泯 1繝ｶ譛亥・ <b>' + warnCount + '</b></div>' +
-            '<div class="dash-summary-item" style="color:#9ca3af;">筮・蝨ｨ蠎ｫ蛻・ｌ <b>' + outCount + '</b></div>';
+            '<div class="dash-summary-item" style="color:#f1f5f9;">💊 薬剤 <b>' + totalMeds + '</b>種</div>' +
+            '<div class="dash-summary-item" style="color:#f87171;">🔴 期限切れ <b>' + dangerCount + '</b></div>' +
+            '<div class="dash-summary-item" style="color:#fbbf24;">🟡 1ヶ月内 <b>' + warnCount + '</b></div>' +
+            '<div class="dash-summary-item" style="color:#9ca3af;">⬛ 在庫切れ <b>' + outCount + '</b></div>';
 
         if (meds.length === 0) {
             empty.classList.remove('hidden');
@@ -1152,28 +1155,28 @@
             var card = document.createElement('div');
             card.className = 'dash-card';
 
-            // 繝倥ャ繝繝ｼ
+            // ヘッダー
             var header = document.createElement('div');
             header.className = 'dash-card-header';
-            header.innerHTML = '<span class="dash-card-name">抽 ' + med.name + '</span>' +
+            header.innerHTML = '<span class="dash-card-name">💊 ' + med.name + '</span>' +
                 (med.category ? '<span class="dash-card-cat">' + med.category + '</span>' : '') +
                 '<span class="dash-card-unit">(' + med.unit + ')</span>';
             card.appendChild(header);
 
-            // 繧ｯ繝ｪ繝九ャ繧ｯ陦・
+            // クリニック行
             for (var ci = 0; ci < med.clinics.length; ci++) {
                 (function(cl) {
                     var es = getExpiryStatus(cl.expiryDate);
                     var isOut = cl.quantity === 0;
                     var statusColor = isOut ? '#9ca3af' : (es.status === 'danger' ? '#f87171' : (es.status === 'warn' ? '#fbbf24' : '#34d399'));
-                    var statusIcon = isOut ? '筮・ : (es.status === 'danger' ? '閥' : (es.status === 'warn' ? '泯' : '泙'));
+                    var statusIcon = isOut ? '⬛' : (es.status === 'danger' ? '🔴' : (es.status === 'warn' ? '🟡' : '🟢'));
                     var row = document.createElement('div');
                     row.className = 'dash-clinic-row';
                     row.innerHTML =
-                        '<span class="dash-clinic-name">唱 ' + cl.clinicName + '</span>' +
+                        '<span class="dash-clinic-name">🏥 ' + cl.clinicName + '</span>' +
                         '<span class="dash-clinic-qty" style="color:' + (isOut ? '#9ca3af' : '#f1f5f9') + '">' + cl.quantity + med.unit + '</span>' +
                         '<span class="dash-clinic-exp">' + (cl.expiryDate ? formatDate(cl.expiryDate) : '-') + '</span>' +
-                        '<span class="dash-clinic-status" style="color:' + statusColor + '">' + statusIcon + ' ' + (isOut ? '蝨ｨ蠎ｫ蛻・ｌ' : es.label) + '</span>';
+                        '<span class="dash-clinic-status" style="color:' + statusColor + '">' + statusIcon + ' ' + (isOut ? '在庫切れ' : es.label) + '</span>';
                     row.addEventListener('click', function() {
                         location.href = '/room/' + cl.clinicId;
                     });
@@ -1184,7 +1187,7 @@
         }
     }
 
-    // === 蛻晄悄蛹・===
+    // === 初期化 ===
     function init() {
 
         var parts = location.pathname.split('/');
@@ -1192,7 +1195,7 @@
             roomId = parts[2];
             try { myName = localStorage.getItem('med_name_' + roomId) || ''; } catch(e) {}
             if (!myName) {
-                myName = prompt('縺ゅ↑縺溘・蜷榊燕繧貞・蜉帙＠縺ｦ縺上□縺輔＞');
+                myName = prompt('あなたの名前を入力してください');
                 if (myName) {
                     try { localStorage.setItem('med_name_' + roomId, myName); } catch(e) {}
                 }
@@ -1202,13 +1205,13 @@
             renderHistory();
             renderGroupSection();
         }
-        // Service Worker逋ｻ骭ｲ
+        // Service Worker登録
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js').catch(function() {});
         }
     }
 
-    // === 繝ｫ繝ｼ繝菴懈・ ===
+    // === ルーム作成 ===
     document.getElementById('backToTopBtn').addEventListener('click', function() {
         roomView.classList.add('hidden');
         topView.classList.remove('hidden');
@@ -1220,10 +1223,10 @@
     });
 
       document.getElementById('createRoomBtn').addEventListener('click', function() {
-        var name = document.getElementById('roomName').value.trim() || '阮ｬ蜑､邂｡逅・;
-        // 菴懈・閠・錐繧定◇縺擾ｼ医∪縺蜷榊燕縺梧悴險ｭ螳壹・蝣ｴ蜷茨ｼ・
+        var name = document.getElementById('roomName').value.trim() || '薬剤管理';
+        // 作成者名を聞く（まだ名前が未設定の場合）
         if (!myName) {
-            myName = prompt('縺ゅ↑縺溘・蜷榊燕繧貞・蜉帙＠縺ｦ縺上□縺輔＞・育ｮ｡逅・ｺｺ縺ｨ縺励※逋ｻ骭ｲ縺輔ｌ縺ｾ縺呻ｼ・) || '';
+            myName = prompt('あなたの名前を入力してください（管理人として登録されます）') || '';
             if (myName) localStorage.setItem('med_myName', myName);
         }
         apiCall('POST', '/api/create', { name: name, creator: myName, deviceId: deviceId }, function(status, data) {
@@ -1231,7 +1234,7 @@
                 addToHistory(data.id, name);
                 location.href = '/room/' + data.id;
             } else {
-                alert('菴懈・縺ｫ螟ｱ謨励＠縺ｾ縺励◆');
+                alert('作成に失敗しました');
             }
         });
     });
@@ -1243,14 +1246,14 @@
 
         apiCall('GET', '/api/room/' + roomId + '?user=' + encodeURIComponent(myName) + '&deviceId=' + encodeURIComponent(deviceId), null, function(status, data) {
             if (status !== 200 || !data) {
-                alert('繝ｫ繝ｼ繝縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ');
+                alert('ルームが見つかりません');
                 try { localStorage.removeItem('med_last_room'); } catch(e) {}
                 location.href = '/';
                 return;
             }
             roomData = data;
             addToHistory(data.id, data.name);
-            document.getElementById('headerTitle').textContent = '抽 ' + data.name;
+            document.getElementById('headerTitle').textContent = '💊 ' + data.name;
             renderMedicines();
             renderStaffList();
             checkNotificationPermission();
@@ -1258,7 +1261,7 @@
         });
     }
 
-    // === 繝壹・繧ｸ繝ｪ繝ｭ繝ｼ繝峨↑縺励〒繝・・繧ｿ繧呈峩譁ｰ ===
+    // === ページリロードなしでデータを更新 ===
     window.refreshRoomData = function() {
         if (!roomId) return;
         apiCall('GET', '/api/room/' + roomId + '?user=' + encodeURIComponent(myName) + '&deviceId=' + encodeURIComponent(deviceId), null, function(status, data) {
@@ -1271,7 +1274,7 @@
         });
     };
 
-    // === 閾ｪ蜍輔Μ繝ｭ繝ｼ繝会ｼ・0遘帝俣髫費ｼ・===
+    // === 自動リロード（30秒間隔） ===
     var autoReloadTimer = null;
     var lastMedHash = '';
     function getMedHash() {
@@ -1303,32 +1306,32 @@
         }, 30000);
     }
 
-    // === GS1繧ｳ繝ｼ繝牙・蜉幢ｼ芋沛ｷ・上・繧ｿ繝ｳ縺九ｉ逶ｴ陦鯉ｼ・===
+    // === GS1コード入力（🏷️ボタンから直行） ===
     window.openScanInput = function() {
         openAddModal();
         setTimeout(function() {
             document.getElementById('gs1CodeInput').focus();
-            showToast('捷・・繝舌・繧ｳ繝ｼ繝我ｸ九・謨ｰ蟄励ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞');
+            showToast('🏷️ バーコード下の数字を入力してください');
         }, 200);
     };
     function onBarcodeDetected(code) {
-        // 繝舌う繝悶Ξ繝ｼ繧ｷ繝ｧ繝ｳ
+        // バイブレーション
         if (navigator.vibrate) navigator.vibrate(100);
 
-        // GS1繝舌・繧ｳ繝ｼ繝峨ｒ繝代・繧ｹ
+        // GS1バーコードをパース
         var gs1 = parseGS1(code);
 
         if (gs1.gtin || gs1.expiry || gs1.lot) {
-            // GS1蠖｢蠑上′讀懷・縺輔ｌ縺・
+            // GS1形式が検出された
             document.getElementById('scannerResult').innerHTML =
-                '<div class="code">捷・・GS1繝舌・繧ｳ繝ｼ繝画､懷・</div>' +
+                '<div class="code">🏷️ GS1バーコード検出</div>' +
                 '<div class="hint">' +
                     (gs1.gtin ? 'GTIN: ' + gs1.gtin + '<br>' : '') +
-                    (gs1.expiry ? '譛牙柑譛滄剞: ' + gs1.expiry + '<br>' : '') +
-                    (gs1.lot ? '繝ｭ繝・ヨ: ' + gs1.lot : '') +
+                    (gs1.expiry ? '有効期限: ' + gs1.expiry + '<br>' : '') +
+                    (gs1.lot ? 'ロット: ' + gs1.lot : '') +
                 '</div>';
 
-            // GTIN縺ｧ逋ｻ骭ｲ貂医∩阮ｬ蜑､繧呈､懃ｴ｢
+            // GTINで登録済み薬剤を検索
             var found = null;
             if (roomData && roomData.medicines) {
                 found = roomData.medicines.find(function(m) {
@@ -1340,26 +1343,26 @@
                 closeScanner();
                 if (found) {
                     openEditModal(found);
-                    showToast('捷・・' + found.name + ' 縺瑚ｦ九▽縺九ｊ縺ｾ縺励◆');
+                    showToast('🏷️ ' + found.name + ' が見つかりました');
                 } else {
                     openAddModal();
                     document.getElementById('medName').setAttribute('data-barcode', gs1.gtin || code);
-                    // 譛牙柑譛滄剞繧定・蜍募・蜉・
+                    // 有効期限を自動入力
                     if (gs1.expiry) {
                         document.getElementById('medExpiry').value = gs1.expiry;
                     }
-                    // 繝ｭ繝・ヨ逡ｪ蜿ｷ繧偵Γ繝｢縺ｫ蜈･蜉・
+                    // ロット番号をメモに入力
                     if (gs1.lot) {
-                        document.getElementById('medMemo').value = '繝ｭ繝・ヨ: ' + gs1.lot;
+                        document.getElementById('medMemo').value = 'ロット: ' + gs1.lot;
                     }
-                    showToast('胴 GS1繧ｹ繧ｭ繝｣繝ｳ螳御ｺ・竊・阮ｬ蜑､蜷阪ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞');
+                    showToast('📷 GS1スキャン完了 → 薬剤名を入力してください');
                 }
             }, 800);
         } else {
-            // 騾壼ｸｸ繝舌・繧ｳ繝ｼ繝会ｼ・AN遲会ｼ・
+            // 通常バーコード（JAN等）
             document.getElementById('scannerResult').innerHTML =
-                '<div class="code">捷・・' + code + '</div>' +
-                '<div class="hint">讀懃ｴ｢荳ｭ...</div>';
+                '<div class="code">🏷️ ' + code + '</div>' +
+                '<div class="hint">検索中...</div>';
 
             var found = null;
             if (roomData && roomData.medicines) {
@@ -1368,26 +1371,26 @@
             if (found) {
                 closeScanner();
                 openEditModal(found);
-                showToast('捷・・' + found.name + ' 縺瑚ｦ九▽縺九ｊ縺ｾ縺励◆');
+                showToast('🏷️ ' + found.name + ' が見つかりました');
             } else {
                 setTimeout(function() {
                     closeScanner();
                     openAddModal();
                     document.getElementById('medName').value = '';
                     document.getElementById('medName').setAttribute('data-barcode', code);
-                    showToast('胴 繝舌・繧ｳ繝ｼ繝・ ' + code + ' 竊・譁ｰ隕冗匳骭ｲ');
+                    showToast('📷 バーコード: ' + code + ' → 新規登録');
                 }, 500);
             }
         }
     }
 
-    // === GS1繝舌・繧ｳ繝ｼ繝峨ヱ繝ｼ繧ｵ繝ｼ ===
+    // === GS1バーコードパーサー ===
     function parseGS1(raw) {
         var result = { gtin: '', expiry: '', lot: '', raw: raw };
-        // FNC1/GS譁・ｭ励ｒ髯､蜴ｻ縲∵峡蠑ｧ蠖｢蠑上→raw蠖｢蠑上・荳｡譁ｹ縺ｫ蟇ｾ蠢・
+        // FNC1/GS文字を除去、括弧形式とraw形式の両方に対応
         var data = raw.replace(/[\x1d\x00]/g, '|');
 
-        // 諡ｬ蠑ｧ蠖｢蠑・ (01)14987350027952(17)280300(10)250421VA
+        // 括弧形式: (01)14987350027952(17)280300(10)250421VA
         var parenMatch = data.match(/\(01\)(\d{14})/);
         if (parenMatch) {
             result.gtin = parenMatch[1];
@@ -1402,8 +1405,8 @@
             return result;
         }
 
-        // raw蠖｢蠑・ 011498735002795217280300102504窶・1VA
-        // AI 01 = 14譯∝崋螳・ AI 17 = 6譯∝崋螳・ AI 10 = 蜿ｯ螟蛾聞
+        // raw形式: 011498735002795217280300102504​21VA
+        // AI 01 = 14桁固定, AI 17 = 6桁固定, AI 10 = 可変長
         if (data.length >= 16 && data.substring(0, 2) === '01') {
             result.gtin = data.substring(2, 16);
             var rest = data.substring(16);
@@ -1422,22 +1425,22 @@
         return result;
     }
 
-    // GS1譌･莉倥ヱ繝ｼ繧ｹ: YYMMDD 竊・YYYY-MM-DD
+    // GS1日付パース: YYMMDD → YYYY-MM-DD
     function parseGS1Date(yymmdd) {
         if (!yymmdd || yymmdd.length !== 6) return '';
         var yy = parseInt(yymmdd.substring(0, 2));
         var mm = yymmdd.substring(2, 4);
         var dd = yymmdd.substring(4, 6);
         var yyyy = yy >= 50 ? 1900 + yy : 2000 + yy;
-        // dd=00縺ｮ蝣ｴ蜷医・譛域忰譌･
+        // dd=00の場合は月末日
         if (dd === '00') dd = '' + new Date(yyyy, parseInt(mm), 0).getDate();
         return yyyy + '-' + mm + '-' + dd;
     }
 
-    // === 阮ｬ蜑､繝ｪ繧ｹ繝域緒逕ｻ ===
+    // === 薬剤リスト描画 ===
     function renderMedicines() {
         if (!roomData) return;
-        // 繧ｰ繝ｭ繝ｼ繝舌Ν蜷梧悄
+        // グローバル同期
         window._medRoomData = roomData;
         window._medRoomId = roomId;
         window._medMyName = myName;
@@ -1447,7 +1450,7 @@
         var statsBar = document.getElementById('statsBar');
         list.innerHTML = '';
 
-        // 繧ｫ繝・ざ繝ｪ繧ｿ繝門虚逧・函謌・
+        // カテゴリタブ動的生成
         var catSet = {};
         for (var ci = 0; ci < meds.length; ci++) {
             var cc = meds[ci].category || '';
@@ -1463,11 +1466,11 @@
             catTabs.innerHTML = catHtml;
         }
 
-        // 繧ｹ繝・・繧ｿ繧ｹ險育ｮ・
+        // ステータス計算
         var expired = 0, warning = 0, safe = 0, outOfStock = 0;
         var alertMeds = [];
 
-        // 繧ｽ繝ｼ繝・
+        // ソート
         if (currentSort === 'name') {
             meds.sort(function(a, b) { return (a.name || '').localeCompare(b.name || '', 'ja'); });
         } else if (currentSort === 'category') {
@@ -1487,13 +1490,13 @@
         } else if (currentSort === 'qty') {
             meds.sort(function(a, b) { return a.quantity - b.quantity; });
         } else {
-            // 譖ｴ譁ｰ鬆・ｼ医ョ繝輔か繝ｫ繝茨ｼ・
+            // 更新順（デフォルト）
             meds.sort(function(a, b) {
                 return (b.updatedAt || b.addedAt || '').localeCompare(a.updatedAt || a.addedAt || '');
             });
         }
 
-        // 繝輔ぅ繝ｫ繧ｿ・・緒逕ｻ
+        // フィルタ＆描画
         var filtered = [];
         for (var i = 0; i < meds.length; i++) {
             var m = meds[i];
@@ -1505,13 +1508,13 @@
             else if (es.status === 'warn') { warning++; alertMeds.push(m); }
             else safe++;
 
-            // 繝輔ぅ繝ｫ繧ｿ
+            // フィルタ
             var show = true;
             if (currentFilter === 'danger' && es.status !== 'danger') show = false;
             if (currentFilter === 'warn' && es.status !== 'warn') show = false;
             if (currentFilter === 'safe' && es.status !== 'safe') show = false;
             if (currentFilter === 'out' && !isOut) show = false;
-            // 繧ｫ繝・ざ繝ｪ繝輔ぅ繝ｫ繧ｿ繝ｼ
+            // カテゴリフィルター
             if (show && currentCategory !== 'all') {
                 if ((m.category || '') !== currentCategory) show = false;
             }
@@ -1525,16 +1528,16 @@
             }
             if (show) filtered.push(m);
         }
-        // 驕ｸ謚樒畑: 繝輔ぅ繝ｫ繧ｿ蠕後・mid荳隕ｧ繧貞・髢・
+        // 選択用: フィルタ後のmid一覧を公開
         window._medFilteredMids = filtered.map(function(m) { return m.mid; });
 
-        // 邨ｱ險・
+        // 統計
         document.getElementById('expiredCount').textContent = expired;
         document.getElementById('warningCount').textContent = warning;
         document.getElementById('safeCount').textContent = safe;
         statsBar.classList.remove('hidden');
 
-        // 繧｢繝ｩ繝ｼ繝郁｡ｨ遉ｺ
+        // アラート表示
         renderAlerts(alertMeds);
 
         if (filtered.length === 0) {
@@ -1552,11 +1555,11 @@
             card.className = 'med-card' + (isOutOfStock ? ' status-out' : ' status-' + status.status);
             if (selectMode && selectedMids.has(med.mid)) { card.style.borderColor = '#0ea5e9'; card.style.background = 'rgba(14,165,233,.08)'; }
 
-            // 繝倥ャ繝繝ｼ
+            // ヘッダー
             var header = document.createElement('div');
             header.className = 'med-header';
 
-            // 驕ｸ謚槭Δ繝ｼ繝・ 繝√ぉ繝・け繝懊ャ繧ｯ繧ｹ
+            // 選択モード: チェックボックス
             if (selectMode) {
                 var cb = document.createElement('input');
                 cb.type = 'checkbox'; cb.checked = selectedMids.has(med.mid);
@@ -1571,7 +1574,7 @@
 
             var icon = document.createElement('div');
             icon.className = 'med-icon';
-            icon.textContent = isOutOfStock ? '逃' : (status.status === 'danger' ? '閥' : (status.status === 'warn' ? '泯' : '泙'));
+            icon.textContent = isOutOfStock ? '📦' : (status.status === 'danger' ? '🔴' : (status.status === 'warn' ? '🟡' : '🟢'));
 
             var info = document.createElement('div');
             info.className = 'med-info';
@@ -1580,8 +1583,8 @@
             nameEl.textContent = med.name;
             var metaEl = document.createElement('div');
             metaEl.className = 'med-meta';
-            var metaText = '譛滄剞: ' + formatDate(med.expiryDate);
-            if (med.barcode) metaText += ' 繝ｻ捷・・ + med.barcode;
+            var metaText = '期限: ' + formatDate(med.expiryDate);
+            if (med.barcode) metaText += ' ・🏷️' + med.barcode;
             metaEl.textContent = metaText;
             info.appendChild(nameEl);
             info.appendChild(metaEl);
@@ -1590,10 +1593,10 @@
             actions.className = 'med-actions';
             var badge = document.createElement('span');
             badge.className = 'med-badge ' + (isOutOfStock ? 'badge-out' : 'badge-' + status.status);
-            badge.textContent = isOutOfStock ? '蝨ｨ蠎ｫ蛻・ｌ' : status.label;
+            badge.textContent = isOutOfStock ? '在庫切れ' : status.label;
             var editBtn = document.createElement('button');
             editBtn.className = 'btn-icon btn-outline';
-            editBtn.textContent = '笨擾ｸ・;
+            editBtn.textContent = '✏️';
             editBtn.style.marginLeft = '4px';
             (function(m) { editBtn.addEventListener('click', function(e) { e.stopPropagation(); openEditModal(m); }); })(med);
             actions.appendChild(badge);
@@ -1604,7 +1607,7 @@
             header.appendChild(actions);
             card.appendChild(header);
 
-            // 繝ｭ繝・ヨ陦ｨ遉ｺ・育峩謗･謫堺ｽ懷庄閭ｽ・・
+            // ロット表示（直接操作可能）
             if (Array.isArray(med.lots) && med.lots.length > 1) {
                 var lotDiv = document.createElement('div');
                 lotDiv.style.cssText = 'margin-top:6px;padding:6px 8px;background:rgba(14,165,233,.05);border-radius:8px;border:1px solid rgba(14,165,233,.1);';
@@ -1618,7 +1621,7 @@
                         var lotRow = document.createElement('div');
                         lotRow.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:11px;padding:3px 0;';
                         var lsColor = ls.status === 'danger' ? '#f87171' : (ls.status === 'warn' ? '#fbbf24' : '#34d399');
-                        // 譛滄剞陦ｨ遉ｺ
+                        // 期限表示
                         var dotSpan = document.createElement('span');
                         dotSpan.style.cssText = 'color:' + lsColor + ';font-size:8px;';
                         dotSpan.textContent = '\u25cf';
@@ -1628,26 +1631,26 @@
                         var statusSpan = document.createElement('span');
                         statusSpan.style.cssText = 'font-size:9px;color:#64748b;min-width:42px;';
                         statusSpan.textContent = ls.label;
-                        // 竏偵・繧ｿ繝ｳ
+                        // −ボタン
                         var lotMinus = document.createElement('button');
                         lotMinus.style.cssText = 'width:22px;height:22px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:5px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:auto;flex-shrink:0;';
                         lotMinus.textContent = '\u2212';
                         lotMinus.addEventListener('click', function(e) { e.stopPropagation(); adjustQty(m.mid, -1, lotIdx); });
-                        // 謨ｰ驥擾ｼ医ち繝・・縺ｧ逶ｴ謗･蜈･蜉幢ｼ・
+                        // 数量（タップで直接入力）
                         var lotQtySpan = document.createElement('span');
                         lotQtySpan.style.cssText = 'font-weight:700;color:#f1f5f9;min-width:32px;text-align:center;font-size:12px;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;';
                         lotQtySpan.textContent = lot.quantity + (m.unit||'\u500b');
                         lotQtySpan.addEventListener('click', function(e) {
                             e.stopPropagation();
-                            var newVal = prompt(formatDate(lot.expiryDate) + ' 縺ｮ繝ｭ繝・ヨ謨ｰ驥上ｒ蜈･蜉・, lot.quantity);
+                            var newVal = prompt(formatDate(lot.expiryDate) + ' のロット数量を入力', lot.quantity);
                             if (newVal === null) return;
                             var num = parseInt(newVal);
-                            if (isNaN(num) || num < 0) { alert('豁｣縺励＞謨ｰ蛟､繧貞・蜉帙＠縺ｦ縺上□縺輔＞'); return; }
+                            if (isNaN(num) || num < 0) { alert('正しい数値を入力してください'); return; }
                             var diff = num - lot.quantity;
                             if (diff === 0) return;
                             adjustQty(m.mid, diff, lotIdx);
                         });
-                        // ・九・繧ｿ繝ｳ
+                        // ＋ボタン
                         var lotPlus = document.createElement('button');
                         lotPlus.style.cssText = 'width:22px;height:22px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:5px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
                         lotPlus.textContent = '\uff0b';
@@ -1664,26 +1667,26 @@
                 card.appendChild(lotDiv);
             }
 
-            // 謨ｰ驥乗桃菴・
+            // 数量操作
             var qtyRow = document.createElement('div');
             qtyRow.className = 'med-qty';
             var minusBtn = document.createElement('button');
             minusBtn.className = 'qty-btn';
-            minusBtn.textContent = '竏・;
+            minusBtn.textContent = '−';
             (function(m) { minusBtn.addEventListener('click', function() { adjustQty(m.mid, -1); }); })(med);
             var qtyVal = document.createElement('span');
             qtyVal.className = 'qty-val';
-            qtyVal.textContent = med.quantity + (med.unit || '蛟・);
+            qtyVal.textContent = med.quantity + (med.unit || '個');
             qtyVal.style.cursor = 'pointer';
             qtyVal.style.textDecoration = 'underline';
             qtyVal.style.textDecorationStyle = 'dotted';
-            // 繧ｿ繝・・縺ｧ謨ｰ驥冗峩謗･蜈･蜉・
+            // タップで数量直接入力
             (function(m) {
                 qtyVal.addEventListener('click', function() {
-                    var newVal = prompt(m.name + ' 縺ｮ謨ｰ驥上ｒ蜈･蜉・, m.quantity);
+                    var newVal = prompt(m.name + ' の数量を入力', m.quantity);
                     if (newVal === null) return;
                     var num = parseInt(newVal);
-                    if (isNaN(num) || num < 0) { alert('豁｣縺励＞謨ｰ蛟､繧貞・蜉帙＠縺ｦ縺上□縺輔＞'); return; }
+                    if (isNaN(num) || num < 0) { alert('正しい数値を入力してください'); return; }
                     var diff = num - m.quantity;
                     if (diff === 0) return;
                     adjustQty(m.mid, diff);
@@ -1691,13 +1694,13 @@
             })(med);
             var plusBtn = document.createElement('button');
             plusBtn.className = 'qty-btn';
-            plusBtn.textContent = '・・;
+            plusBtn.textContent = '＋';
             (function(m) { plusBtn.addEventListener('click', function() { adjustQty(m.mid, 1); }); })(med);
             qtyRow.appendChild(minusBtn);
             qtyRow.appendChild(qtyVal);
             qtyRow.appendChild(plusBtn);
 
-            // 譛邨よ峩譁ｰ譌･譎ゅ・譖ｴ譁ｰ閠・｡ｨ遉ｺ・域峩譁ｰ諠・ｱ縺後↑縺代ｌ縺ｰ逋ｻ骭ｲ諠・ｱ繧定｡ｨ遉ｺ・・
+            // 最終更新日時・更新者表示（更新情報がなければ登録情報を表示）
             var dispBy = med.updatedBy || med.addedBy || '';
             var dispAt = med.updatedAt || med.addedAt || '';
             if (dispAt || dispBy) {
@@ -1708,12 +1711,12 @@
                     var ud = new Date(dispAt);
                     timeStr = (ud.getMonth()+1) + '/' + ud.getDate() + ' ' + ('0'+ud.getHours()).slice(-2) + ':' + ('0'+ud.getMinutes()).slice(-2);
                 }
-                updInfo.innerHTML = '武 ' + timeStr + (dispBy ? ' ' + escHtml(dispBy) : '');
+                updInfo.innerHTML = '🕐 ' + timeStr + (dispBy ? ' ' + escHtml(dispBy) : '');
                 qtyRow.appendChild(updInfo);
             }
             card.appendChild(qtyRow);
 
-            // 隧ｳ邏ｰ
+            // 詳細
             if (med.location || med.category) {
                 var detail = document.createElement('div');
                 detail.className = 'med-detail';
@@ -1726,7 +1729,7 @@
         }
     }
 
-    // === 繧｢繝ｩ繝ｼ繝域緒逕ｻ ===
+    // === アラート描画 ===
     function renderAlerts(alertMeds) {
         var container = document.getElementById('expiryAlerts');
         container.innerHTML = '';
@@ -1736,7 +1739,7 @@
         card.style.cssText = 'background:linear-gradient(135deg,#7f1d1d,#991b1b);border-radius:12px;padding:12px;margin-bottom:10px;border:1px solid #dc2626;';
         var title = document.createElement('div');
         title.style.cssText = 'font-size:13px;font-weight:900;color:#fca5a5;margin-bottom:6px;';
-        title.textContent = '笞・・譛滄剞縺ｫ豕ｨ諢上′蠢・ｦ√↑阮ｬ蜑､ (' + alertMeds.length + '莉ｶ)';
+        title.textContent = '⚠️ 期限に注意が必要な薬剤 (' + alertMeds.length + '件)';
         card.appendChild(title);
 
         for (var i = 0; i < Math.min(alertMeds.length, 5); i++) {
@@ -1744,37 +1747,37 @@
             var es = getExpiryStatus(m.expiryDate);
             var row = document.createElement('div');
             row.style.cssText = 'font-size:12px;color:#fecaca;padding:2px 0;';
-            row.textContent = (es.status === 'danger' ? '閥' : '泯') + ' ' + m.name + ' 窶・' + es.label + ' (' + formatDate(m.expiryDate) + ')';
+            row.textContent = (es.status === 'danger' ? '🔴' : '🟡') + ' ' + m.name + ' — ' + es.label + ' (' + formatDate(m.expiryDate) + ')';
             card.appendChild(row);
         }
         if (alertMeds.length > 5) {
             var more = document.createElement('div');
             more.style.cssText = 'font-size:11px;color:#f87171;margin-top:4px;';
-            more.textContent = '莉・' + (alertMeds.length - 5) + '莉ｶ...';
+            more.textContent = '他 ' + (alertMeds.length - 5) + '件...';
             card.appendChild(more);
         }
         container.appendChild(card);
     }
 
-    // === 謨ｰ驥丞｢玲ｸ幢ｼ・otIndex謖・ｮ壹〒繝ｭ繝・ヨ蛻･謫堺ｽ懊↓蟇ｾ蠢懶ｼ・===
+    // === 数量増減（lotIndex指定でロット別操作に対応） ===
     function adjustQty(mid, delta, lotIndex) {
         var payload = { mid: mid, delta: delta, updatedBy: myName };
         if (lotIndex !== undefined && lotIndex >= 0) payload.lotIndex = lotIndex;
         apiCall('POST', '/api/room/' + roomId + '/adjust', payload, function(status, data) {
             if (status === 200) {
                 loadRoom();
-                showToast(delta > 0 ? '・・ + delta + ' 霑ｽ蜉縺励∪縺励◆' : '竏・ + Math.abs(delta) + ' 菴ｿ逕ｨ縺励∪縺励◆');
+                showToast(delta > 0 ? '＋' + delta + ' 追加しました' : '−' + Math.abs(delta) + ' 使用しました');
             }
         });
     }
 
-    // === 讀懃ｴ｢ ===
+    // === 検索 ===
     document.getElementById('searchInput').addEventListener('input', function() {
         searchQuery = this.value.trim();
         renderMedicines();
     });
 
-    // === 繝輔ぅ繝ｫ繧ｿ繝ｼ ===
+    // === フィルター ===
     document.getElementById('filterTabs').addEventListener('click', function(e) {
         var tab = e.target.closest('.filter-tab');
         if (!tab) return;
@@ -1785,13 +1788,13 @@
         renderMedicines();
     });
 
-    // === 繧ｽ繝ｼ繝・===
+    // === ソート ===
     document.getElementById('sortSelect').addEventListener('change', function() {
         currentSort = this.value;
         renderMedicines();
     });
 
-    // === 霑ｽ蜉繝｢繝ｼ繝繝ｫ ===
+    // === 追加モーダル ===
     window.openAddModal = function() {
         document.getElementById('addModal').classList.add('show');
         document.getElementById('medName').value = '';
@@ -1808,27 +1811,27 @@
         setTimeout(function() { document.getElementById('medName').focus(); }, 100);
     };
 
-    // === GS1繧ｳ繝ｼ繝画焔蜍募・蜉幄ｧ｣譫・===
+    // === GS1コード手動入力解析 ===
     document.getElementById('gs1ParseBtn').addEventListener('click', function() {
         var code = document.getElementById('gs1CodeInput').value.trim();
-        if (!code) { alert('GS1繧ｳ繝ｼ繝峨ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞'); return; }
+        if (!code) { alert('GS1コードを入力してください'); return; }
         var gs1 = parseGS1(code);
         if (gs1.gtin || gs1.expiry || gs1.lot) {
             var resultHtml = '';
-            if (gs1.gtin) resultHtml += '笨・GTIN: ' + gs1.gtin + '<br>';
+            if (gs1.gtin) resultHtml += '✅ GTIN: ' + gs1.gtin + '<br>';
             if (gs1.expiry) {
-                resultHtml += '笨・譛牙柑譛滄剞: ' + gs1.expiry + ' 竊・閾ｪ蜍募・蜉帶ｸ・br>';
+                resultHtml += '✅ 有効期限: ' + gs1.expiry + ' → 自動入力済<br>';
                 document.getElementById('medExpiry').value = gs1.expiry;
             }
             if (gs1.lot) {
-                resultHtml += '笨・繝ｭ繝・ヨ: ' + gs1.lot + ' 竊・繝｡繝｢縺ｫ蜈･蜉帶ｸ・;
-                document.getElementById('medMemo').value = '繝ｭ繝・ヨ: ' + gs1.lot;
+                resultHtml += '✅ ロット: ' + gs1.lot + ' → メモに入力済';
+                document.getElementById('medMemo').value = 'ロット: ' + gs1.lot;
             }
             document.getElementById('gs1ParseResult').innerHTML = resultHtml;
             document.getElementById('medName').setAttribute('data-barcode', gs1.gtin || code);
-            showToast('捷・・GS1繧ｳ繝ｼ繝芽ｧ｣譫仙ｮ御ｺ・ｼ・);
+            showToast('🏷️ GS1コード解析完了！');
 
-            // GTIN繧貞膚蜩√さ繝ｼ繝画ｬ・↓閾ｪ蜍募・蜉幢ｼ・匳骭ｲ貂医∩繝舌・繧ｳ繝ｼ繝画､懃ｴ｢
+            // GTINを商品コード欄に自動入力＆登録済みバーコード検索
             if (gs1.gtin) {
                 var barcodeEl = document.getElementById('medBarcode');
                 if (barcodeEl) barcodeEl.value = gs1.gtin;
@@ -1843,18 +1846,18 @@
                     if (found.unit) document.getElementById('medUnit').value = found.unit;
                     if (found.category) document.getElementById('medCategory').value = found.category;
                     if (found.location) document.getElementById('medLocation').value = found.location;
-                    document.getElementById('gs1ParseResult').innerHTML += '<br>笨・' + found.name + ' 竊・閾ｪ蜍募・蜉帶ｸ・;
-                    showToast('抽 ' + found.name + ' 縺瑚ｦ九▽縺九ｊ縺ｾ縺励◆・・);
+                    document.getElementById('gs1ParseResult').innerHTML += '<br>✅ ' + found.name + ' → 自動入力済';
+                    showToast('💊 ' + found.name + ' が見つかりました！');
                 } else {
-                    document.getElementById('gs1ParseResult').innerHTML += '<br>笞・・阮ｬ蜑､蜷阪′隕九▽縺九ｊ縺ｾ縺帙ｓ縲よ焔蜍輔〒蜈･蜉帙＠縺ｦ縺上□縺輔＞縲・;
+                    document.getElementById('gs1ParseResult').innerHTML += '<br>⚠️ 薬剤名が見つかりません。手動で入力してください。';
                     document.getElementById('medName').focus();
                 }
             }
         } else {
-            document.getElementById('gs1ParseResult').innerHTML = '<span style="color:#f87171;">笶・隗｣譫舌〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・01)...(17)...(10)...蠖｢蠑上〒蜈･蜉帙＠縺ｦ縺上□縺輔＞</span>';
+            document.getElementById('gs1ParseResult').innerHTML = '<span style="color:#f87171;">❌ 解析できませんでした。(01)...(17)...(10)...形式で入力してください</span>';
         }
     });
-    // Enter繧ｭ繝ｼ縺ｧ繧りｧ｣譫・
+    // Enterキーでも解析
     document.getElementById('gs1CodeInput').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -1862,7 +1865,7 @@
         }
     });
 
-    // === 莠域ｸｬ讀懃ｴ｢繧ｻ繝・ヨ繧｢繝・・ ===
+    // === 予測検索セットアップ ===
     function setupAutocomplete(inputId, listId) {
         var input = document.getElementById(inputId);
         var list = document.getElementById(listId);
@@ -1884,21 +1887,21 @@
                     || tKata.indexOf(qKata) !== -1 || tHira.indexOf(qHira) !== -1;
             }
 
-            // 逋ｻ骭ｲ貂医∩阮ｬ蜑､蜷阪°繧画､懃ｴ｢・亥━蜈茨ｼ・
+            // 登録済み薬剤名から検索（優先）
             if (roomData && roomData.medicines) {
                 for (var i = 0; i < roomData.medicines.length; i++) {
                     var name = roomData.medicines[i].name;
                     if (matches(name) && !seen[name]) {
-                        results.push({ name: name, source: '逋ｻ骭ｲ貂・ });
+                        results.push({ name: name, source: '登録済' });
                         seen[name] = true;
                     }
                 }
             }
-            // 荳闊ｬ阮ｬ蜑､蜷阪Μ繧ｹ繝医°繧画､懃ｴ｢
+            // 一般薬剤名リストから検索
             for (var j = 0; j < commonMedicines.length; j++) {
                 var cm = commonMedicines[j];
                 if (matches(cm) && !seen[cm]) {
-                    results.push({ name: cm, source: '蛟呵｣・ });
+                    results.push({ name: cm, source: '候補' });
                     seen[cm] = true;
                 }
             }
@@ -1921,10 +1924,10 @@
                 } else {
                     div.textContent = name;
                 }
-                if (items[i].source === '逋ｻ骭ｲ貂・) {
+                if (items[i].source === '登録済') {
                     var tag = document.createElement('span');
                     tag.style.cssText = 'float:right;font-size:10px;color:#64748b;';
-                    tag.textContent = '搭 逋ｻ骭ｲ貂・;
+                    tag.textContent = '📋 登録済';
                     div.appendChild(tag);
                 }
                 (function(n) {
@@ -1969,7 +1972,7 @@
                 for (var i = 0; i < items.length; i++) items[i].classList.toggle('active', i === activeIdx);
             } else if (e.key === 'Enter' && activeIdx >= 0) {
                 e.preventDefault();
-                input.value = items[activeIdx].textContent.replace('搭 逋ｻ骭ｲ貂・,'').trim();
+                input.value = items[activeIdx].textContent.replace('📋 登録済','').trim();
                 list.classList.remove('show');
             }
         });
@@ -1980,7 +1983,7 @@
         document.getElementById('addModal').classList.remove('show');
     };
 
-    // 繝｢繝ｼ繝繝ｫ閭梧勹繧ｯ繝ｪ繝・け縺ｧ髢峨§繧・
+    // モーダル背景クリックで閉じる
     document.getElementById('addModal').addEventListener('click', function(e) {
         if (e.target === this) closeAddModal();
     });
@@ -1988,7 +1991,7 @@
         if (e.target === this) closeEditModal();
     });
 
-    // 霑ｽ蜉螳溯｡・
+    // 追加実行
     document.getElementById('addMedBtn').addEventListener('click', function() {
         var name = document.getElementById('medName').value.trim();
         var qty = parseInt(document.getElementById('medQty').value) || 1;
@@ -1999,8 +2002,8 @@
         var memo = document.getElementById('medMemo').value.trim();
         var barcode = document.getElementById('medBarcode').value.trim() || document.getElementById('medName').getAttribute('data-barcode') || '';
 
-        if (!name) { alert('阮ｬ蜑､蜷阪ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞'); return; }
-        if (!expiry) { alert('豸郁ｲｻ譛滄剞繧貞・蜉帙＠縺ｦ縺上□縺輔＞'); return; }
+        if (!name) { alert('薬剤名を入力してください'); return; }
+        if (!expiry) { alert('消費期限を入力してください'); return; }
 
         apiCall('POST', '/api/room/' + roomId + '/add', {
             name: name, quantity: qty, unit: unit, expiryDate: expiry,
@@ -2008,18 +2011,18 @@
         }, function(status, data) {
             if (status === 200) {
                 closeAddModal();
-                showToast('笨・' + name + ' 繧定ｿｽ蜉縺励∪縺励◆');
-                // 縺頑ｰ励↓蜈･繧翫↓閾ｪ蜍穂ｿ晏ｭ・
+                showToast('✅ ' + name + ' を追加しました');
+                // お気に入りに自動保存
                 saveFavorite({ name: name, unit: unit, category: category, location: location });
                 loadRoom();
             } else {
-                alert('霑ｽ蜉縺ｫ螟ｱ謨・ ' + (data ? data.error : '荳肴・縺ｪ繧ｨ繝ｩ繝ｼ'));
+                alert('追加に失敗: ' + (data ? data.error : '不明なエラー'));
             }
         });
     });
 
-    // === 邱ｨ髮・Δ繝ｼ繝繝ｫ ===
-    // 繝ｭ繝・ヨ謨ｰ驥丞､画峩譎ゅ↓邱乗焚繧定・蜍戊ｨ育ｮ励☆繧・
+    // === 編集モーダル ===
+    // ロット数量変更時に総数を自動計算する
     function recalcTotalFromLots() {
         var lotInputs = document.querySelectorAll('.edit-lot-qty');
         if (lotInputs.length === 0) return;
@@ -2035,42 +2038,42 @@
         document.getElementById('editMid').value = med.mid;
         document.getElementById('editName').value = med.name;
         document.getElementById('editQty').value = med.quantity;
-        document.getElementById('editUnit').value = med.unit || '蛟・;
+        document.getElementById('editUnit').value = med.unit || '個';
         document.getElementById('editExpiry').value = med.expiryDate;
         document.getElementById('editLocation').value = med.location || '';
         document.getElementById('editCategory').value = med.category || '';
         document.getElementById('editBarcode').value = med.barcode || '';
         document.getElementById('editMemo').value = med.memo || '';
-        // 繝ｭ繝・ヨ荳隕ｧ陦ｨ遉ｺ・域桃菴懷庄閭ｽ・・
+        // ロット一覧表示（操作可能）
         var lotSection = document.getElementById('editLotSection');
         if (lotSection) {
             if (Array.isArray(med.lots) && med.lots.length > 0) {
-                var unit = med.unit || '蛟・;
-                var html = '<div style="font-size:12px;font-weight:900;color:#38bdf8;margin-bottom:6px;">逃 繝ｭ繝・ヨ蛻･謨ｰ驥・(' + med.lots.length + ')</div>';
-                html += '<div style="font-size:10px;color:#64748b;margin-bottom:8px;">窶ｻ 繝ｭ繝・ヨ縺ｮ謨ｰ驥上ｒ螟画峩縺吶ｋ縺ｨ邱乗焚縺ｫ蜿肴丐縺輔ｌ縺ｾ縺・/div>';
+                var unit = med.unit || '個';
+                var html = '<div style="font-size:12px;font-weight:900;color:#38bdf8;margin-bottom:6px;">📦 ロット別数量 (' + med.lots.length + ')</div>';
+                html += '<div style="font-size:10px;color:#64748b;margin-bottom:8px;">※ ロットの数量を変更すると総数に反映されます</div>';
                 for (var i = 0; i < med.lots.length; i++) {
                     var l = med.lots[i];
                     var ls = getExpiryStatus(l.expiryDate);
                     var lsColor = ls.status === 'danger' ? '#f87171' : (ls.status === 'warn' ? '#fbbf24' : '#34d399');
                     html += '<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 8px;margin-bottom:4px;background:rgba(15,23,42,.5);border-radius:8px;border:1px solid #334155;">';
-                    html += '<span style="color:' + lsColor + ';font-size:8px;">笳・/span>';
+                    html += '<span style="color:' + lsColor + ';font-size:8px;">●</span>';
                     html += '<span style="color:#e2e8f0;min-width:80px;">' + formatDate(l.expiryDate) + '</span>';
                     html += '<span style="font-size:10px;color:#64748b;min-width:55px;">' + ls.label + '</span>';
                     html += '<div style="display:flex;align-items:center;gap:4px;margin-left:auto;">';
-                    html += '<button type="button" class="lot-adj-btn" data-lot="' + i + '" data-delta="-1" style="width:26px;height:26px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:6px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">竏・/button>';
+                    html += '<button type="button" class="lot-adj-btn" data-lot="' + i + '" data-delta="-1" style="width:26px;height:26px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:6px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>';
                     html += '<input type="number" class="edit-lot-qty" data-lot="' + i + '" value="' + l.quantity + '" inputmode="numeric" style="width:50px;text-align:center;padding:4px;border:1px solid #334155;border-radius:6px;background:#0f172a;color:#f1f5f9;font-size:13px;font-weight:700;">';
-                    html += '<button type="button" class="lot-adj-btn" data-lot="' + i + '" data-delta="1" style="width:26px;height:26px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:6px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">・・/button>';
+                    html += '<button type="button" class="lot-adj-btn" data-lot="' + i + '" data-delta="1" style="width:26px;height:26px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:6px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">＋</button>';
                     html += '<span style="font-size:11px;color:#94a3b8;min-width:20px;">' + unit + '</span>';
                     html += '</div>';
                     html += '</div>';
                 }
                 lotSection.innerHTML = html;
-                // 繝ｭ繝・ヨ謨ｰ驥丞・蜉帙・繧､繝吶Φ繝郁ｨｭ螳・
+                // ロット数量入力のイベント設定
                 var lotQtyInputs = lotSection.querySelectorAll('.edit-lot-qty');
                 for (var j = 0; j < lotQtyInputs.length; j++) {
                     lotQtyInputs[j].addEventListener('input', recalcTotalFromLots);
                 }
-                // 繝ｭ繝・ヨﾂｱ繝懊ち繝ｳ縺ｮ繧､繝吶Φ繝郁ｨｭ螳・
+                // ロット±ボタンのイベント設定
                 var lotAdjBtns = lotSection.querySelectorAll('.lot-adj-btn');
                 for (var k = 0; k < lotAdjBtns.length; k++) {
                     lotAdjBtns[k].addEventListener('click', function() {
@@ -2085,10 +2088,10 @@
                         }
                     });
                 }
-                // 邱乗焚繝輔ぅ繝ｼ繝ｫ繝峨ｒ隱ｭ縺ｿ蜿悶ｊ蟆ら畑縺ｫ・医Ο繝・ヨ縺後≠繧句ｴ蜷茨ｼ・
+                // 総数フィールドを読み取り専用に（ロットがある場合）
                 document.getElementById('editQty').readOnly = true;
                 document.getElementById('editQty').style.opacity = '0.6';
-                document.getElementById('editQty').title = '繝ｭ繝・ヨ蛻･謨ｰ驥上°繧芽・蜍戊ｨ育ｮ励＆繧後∪縺・;
+                document.getElementById('editQty').title = 'ロット別数量から自動計算されます';
             } else {
                 lotSection.innerHTML = '';
                 document.getElementById('editQty').readOnly = false;
@@ -2101,10 +2104,10 @@
         document.getElementById('editModal').classList.remove('show');
     };
 
-    // 菫晏ｭ・
+    // 保存
     document.getElementById('saveEditBtn').addEventListener('click', function() {
         var mid = document.getElementById('editMid').value;
-        // 繝ｭ繝・ヨ蛻･謨ｰ驥上ｒ蜿朱寔
+        // ロット別数量を収集
         var lotInputs = document.querySelectorAll('.edit-lot-qty');
         var lots = null;
         if (lotInputs.length > 0) {
@@ -2131,46 +2134,46 @@
             updatedBy: myName,
             lots: lots,
         };
-        if (!data.name) { alert('阮ｬ蜑､蜷阪ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞'); return; }
+        if (!data.name) { alert('薬剤名を入力してください'); return; }
 
         apiCall('POST', '/api/room/' + roomId + '/update', data, function(status) {
             if (status === 200) {
                 loadRoom();
                 closeEditModal();
-                showToast('笨・譖ｴ譁ｰ縺励∪縺励◆');
+                showToast('✅ 更新しました');
             }
         });
     });
 
-    // 蜑企勁
+    // 削除
     document.getElementById('deleteMedBtn').addEventListener('click', function() {
         var mid = document.getElementById('editMid').value;
         var med = roomData.medicines.find(function(m) { return m.mid === mid; });
-        if (!confirm(med.name + ' 繧貞炎髯､縺励∪縺吶°・・)) return;
+        if (!confirm(med.name + ' を削除しますか？')) return;
 
         apiCall('POST', '/api/room/' + roomId + '/delete', { mid: mid }, function(status) {
             if (status === 200) {
                 loadRoom();
                 closeEditModal();
-                showToast('卵 蜑企勁縺励∪縺励◆');
+                showToast('🗑 削除しました');
             }
         });
     });
 
-    // === URL蜈ｱ譛・===
+    // === URL共有 ===
     document.getElementById('shareRoomBtn').addEventListener('click', function() {
         var url = location.origin + '/room/' + roomId;
-        var text = '抽 ' + (roomData ? roomData.name : '阮ｬ蜑､邂｡逅・) + '\n\n蝨ｨ蠎ｫ邂｡逅・・縺薙■繧解汨Ⅸn' + url;
+        var text = '💊 ' + (roomData ? roomData.name : '薬剤管理') + '\n\n在庫管理はこちら👇\n' + url;
         if (navigator.share) {
-            navigator.share({ title: roomData ? roomData.name : '阮ｬ蜑､邂｡逅・, text: text, url: url }).catch(function() {});
+            navigator.share({ title: roomData ? roomData.name : '薬剤管理', text: text, url: url }).catch(function() {});
         } else if (navigator.clipboard) {
             navigator.clipboard.writeText(text).then(function() {
-                showToast('搭 URL繧偵さ繝斐・縺励∪縺励◆');
+                showToast('📋 URLをコピーしました');
             });
         }
     });
 
-    // === 騾夂衍 ===
+    // === 通知 ===
     function checkNotificationPermission() {
         var banner = document.getElementById('notifyBanner');
         if (!('Notification' in window) || !('serviceWorker' in navigator)) {
@@ -2190,15 +2193,15 @@
         if (!('Notification' in window)) return;
         Notification.requestPermission().then(function(perm) {
             if (perm === 'granted') {
-                showToast('粕 騾夂衍繧呈怏蜉ｹ縺ｫ縺励∪縺励◆');
+                showToast('🔔 通知を有効にしました');
                 document.getElementById('notifyBanner').classList.add('hidden');
-                // 繝ｭ繝ｼ繧ｫ繝ｫ騾夂衍繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ險ｭ螳・
+                // ローカル通知スケジュール設定
                 scheduleLocalCheck();
             }
         });
     };
 
-    // 繝ｭ繝ｼ繧ｫ繝ｫ譛滄剞繝√ぉ繝・け・医い繝励Μ襍ｷ蜍墓凾縺ｫ豈主屓螳溯｡鯉ｼ・
+    // ローカル期限チェック（アプリ起動時に毎回実行）
     function scheduleLocalCheck() {
         if (!roomData || !('Notification' in window) || Notification.permission !== 'granted') return;
         var meds = roomData.medicines || [];
@@ -2210,13 +2213,13 @@
             }
         }
         if (alerts.length > 0) {
-            // 譛蠕後・騾夂衍縺九ｉn譎る俣莉･荳顔ｵ後▲縺ｦ縺・◆繧蛾夂衍
+            // 最後の通知からn時間以上経っていたら通知
             var lastNotify = 0;
             try { lastNotify = parseInt(localStorage.getItem('med_last_notify_' + roomId) || '0'); } catch(e) {}
             var now = Date.now();
-            if (now - lastNotify > 8 * 60 * 60 * 1000) { // 8譎る俣縺ｫ1蝗・
-                new Notification('抽 豸郁ｲｻ譛滄剞縺ｮ縺顔衍繧峨○', {
-                    body: alerts.slice(0, 5).join('\n') + (alerts.length > 5 ? '\n莉・ + (alerts.length-5) + '莉ｶ' : ''),
+            if (now - lastNotify > 8 * 60 * 60 * 1000) { // 8時間に1回
+                new Notification('💊 消費期限のお知らせ', {
+                    body: alerts.slice(0, 5).join('\n') + (alerts.length > 5 ? '\n他' + (alerts.length-5) + '件' : ''),
                     icon: '/icon-192.png',
                 });
                 try { localStorage.setItem('med_last_notify_' + roomId, String(now)); } catch(e) {}
@@ -2224,17 +2227,17 @@
         }
     }
 
-    // === 縺頑ｰ励↓蜈･繧願脈蜑､讖溯・ ===
+    // === お気に入り薬剤機能 ===
     function getFavorites() {
         try { return JSON.parse(localStorage.getItem('med_favorites') || '[]'); } catch(e) { return []; }
     }
     function saveFavorite(med) {
         var favs = getFavorites();
-        // 蜷後§蜷榊燕縺梧里縺ｫ縺ゅｌ縺ｰ繧ｹ繧ｭ繝・・
+        // 同じ名前が既にあればスキップ
         for (var i = 0; i < favs.length; i++) {
             if (favs[i].name === med.name) return;
         }
-        favs.unshift({ name: med.name, unit: med.unit || '蛟・, category: med.category || '', location: med.location || '' });
+        favs.unshift({ name: med.name, unit: med.unit || '個', category: med.category || '', location: med.location || '' });
         if (favs.length > 30) favs = favs.slice(0, 30);
         try { localStorage.setItem('med_favorites', JSON.stringify(favs)); } catch(e) {}
     }
@@ -2249,7 +2252,7 @@
         var favs = getFavorites();
         container.innerHTML = '';
         if (favs.length === 0) {
-            container.innerHTML = '<div style="font-size:11px;color:#64748b;padding:4px 0">逋ｻ骭ｲ縺励◆阮ｬ蜑､縺瑚・蜍輔〒縺薙％縺ｫ陦ｨ遉ｺ縺輔ｌ縺ｾ縺・/div>';
+            container.innerHTML = '<div style="font-size:11px;color:#64748b;padding:4px 0">登録した薬剤が自動でここに表示されます</div>';
             return;
         }
         for (var i = 0; i < favs.length; i++) {
@@ -2257,17 +2260,17 @@
                 var tag = document.createElement('div');
                 tag.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12px;color:#fbbf24;font-weight:700';
                 var nameSpan = document.createElement('span');
-                nameSpan.textContent = '抽 ' + fav.name;
+                nameSpan.textContent = '💊 ' + fav.name;
                 nameSpan.addEventListener('click', function() {
-                    // 繝輔か繝ｼ繝縺ｫ閾ｪ蜍募・蜉・
+                    // フォームに自動入力
                     var n = document.getElementById('medName'); if (n) n.value = fav.name;
-                    var u = document.getElementById('medUnit'); if (u) u.value = fav.unit || '蛟・;
+                    var u = document.getElementById('medUnit'); if (u) u.value = fav.unit || '個';
                     var c = document.getElementById('medCategory'); if (c) c.value = fav.category || '';
                     var l = document.getElementById('medLocation'); if (l) l.value = fav.location || '';
-                    showToast('箝・' + fav.name + ' 繧貞・蜉帙＠縺ｾ縺励◆');
+                    showToast('⭐ ' + fav.name + ' を入力しました');
                 });
                 var delBtn = document.createElement('span');
-                delBtn.textContent = 'ﾃ・;
+                delBtn.textContent = '×';
                 delBtn.style.cssText = 'color:#f87171;cursor:pointer;font-size:14px;margin-left:2px';
                 delBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
@@ -2279,7 +2282,7 @@
             })(favs[i]);
         }
     }
-    // 縺頑ｰ励↓蜈･繧願｡ｨ遉ｺ/髱櫁｡ｨ遉ｺ繝医げ繝ｫ
+    // お気に入り表示/非表示トグル
     var favToggle = document.getElementById('favToggle');
     if (favToggle) {
         var favVisible = true;
@@ -2289,7 +2292,7 @@
             if (list) list.style.display = favVisible ? 'flex' : 'none';
         });
     }
-    // 繝｢繝ｼ繝繝ｫ髢九￥譎ゅ↓縺頑ｰ励↓蜈･繧願｡ｨ遉ｺ
+    // モーダル開く時にお気に入り表示
     var origOpenAdd = window.openAddModal;
     window.openAddModal = function() {
         if (origOpenAdd) origOpenAdd();
@@ -2297,17 +2300,17 @@
         renderFavList();
     };
 
-    // === CSV繧ｨ繧ｯ繧ｹ繝昴・繝域ｩ溯・ ===
+    // === CSVエクスポート機能 ===
     window.exportCsv = function() {
         if (!roomData || !roomData.medicines || roomData.medicines.length === 0) {
-            alert('繧ｨ繧ｯ繧ｹ繝昴・繝医☆繧玖脈蜑､繝・・繧ｿ縺後≠繧翫∪縺帙ｓ');
+            alert('エクスポートする薬剤データがありません');
             return;
         }
         var bom = '\uFEFF';
-        var csv = bom + '阮ｬ蜑､蜷・謨ｰ驥・蜊倅ｽ・豸郁ｲｻ譛滄剞,菫晉ｮ｡蝣ｴ謇,繧ｫ繝・ざ繝ｪ,繝｡繝｢\n';
+        var csv = bom + '薬剤名,数量,単位,消費期限,保管場所,カテゴリ,メモ\n';
         for (var i = 0; i < roomData.medicines.length; i++) {
             var m = roomData.medicines[i];
-            // 繧ｫ繝ｳ繝槭ｄ繝繝悶Ν繧ｯ繧ｩ繝ｼ繝医ｒ蜷ｫ繧蛟､繧偵お繧ｹ繧ｱ繝ｼ繝・
+            // カンマやダブルクォートを含む値をエスケープ
             var fields = [
                 m.name || '',
                 m.quantity || '',
@@ -2325,18 +2328,18 @@
                 return s;
             }).join(',') + '\n';
         }
-        // 繝繧ｦ繝ｳ繝ｭ繝ｼ繝・
+        // ダウンロード
         var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
-        var fileName = (roomData.name || '阮ｬ蜑､荳隕ｧ') + '_' + new Date().toISOString().slice(0,10) + '.csv';
+        var fileName = (roomData.name || '薬剤一覧') + '_' + new Date().toISOString().slice(0,10) + '.csv';
         a.href = url; a.download = fileName; a.click();
         URL.revokeObjectURL(url);
-        showToast('踏 ' + roomData.medicines.length + '莉ｶ縺ｮ繝・・繧ｿ繧偵お繧ｯ繧ｹ繝昴・繝医＠縺ｾ縺励◆');
+        showToast('📥 ' + roomData.medicines.length + '件のデータをエクスポートしました');
     };
 
-    // === CSV繧､繝ｳ繝昴・繝域ｩ溯・ ===
-    var csvParsedData = []; // 繝代・繧ｹ貂医∩繝・・繧ｿ
+    // === CSVインポート機能 ===
+    var csvParsedData = []; // パース済みデータ
 
     window.openCsvModal = function() {
         document.getElementById('csvModal').classList.add('show');
@@ -2350,12 +2353,12 @@
     window.closeCsvModal = function() {
         document.getElementById('csvModal').classList.remove('show');
     };
-    // 繝｢繝ｼ繝繝ｫ閭梧勹繧ｯ繝ｪ繝・け縺ｧ髢峨§繧・
+    // モーダル背景クリックで閉じる
     document.getElementById('csvModal').addEventListener('click', function(e) {
         if (e.target === this) closeCsvModal();
     });
 
-    // 繝峨Ο繝・・繧ｾ繝ｼ繝ｳ
+    // ドロップゾーン
     var dropzone = document.getElementById('csvDropzone');
     var csvFileInput = document.getElementById('csvFileInput');
 
@@ -2372,46 +2375,46 @@
         if (this.files.length > 0) handleCsvFile(this.files[0]);
     });
 
-    // 繝・Φ繝励Ξ繝ｼ繝・SV繝繧ｦ繝ｳ繝ｭ繝ｼ繝・
-    var templateCsvText = '阮ｬ蜑､蜷・謨ｰ驥・蜊倅ｽ・豸郁ｲｻ譛滄剞,菫晉ｮ｡蝣ｴ謇,繧ｫ繝・ざ繝ｪ,繝｡繝｢\n繝ｭ繧ｭ繧ｽ繝九Φ骭60mg,10,邂ｱ,2027-03-15,譽哂-1,蜀・恪阮ｬ,\n繧ｫ繝ｭ繝翫・繝ｫ骭500,5,邂ｱ,2026-12-01,譽哂-2,蜀・恪阮ｬ,蛯呵・Γ繝｢\n繝偵Ν繝峨う繝峨た繝輔ヨ霆溯・,3,譛ｬ,2027-06-30,蜀ｷ阡ｵ蠎ｫ,螟也畑阮ｬ,';
+    // テンプレートCSVダウンロード
+    var templateCsvText = '薬剤名,数量,単位,消費期限,保管場所,カテゴリ,メモ\nロキソニン錠60mg,10,箱,2027-03-15,棚A-1,内服薬,\nカロナール錠500,5,箱,2026-12-01,棚A-2,内服薬,備考メモ\nヒルドイドソフト軟膏,3,本,2027-06-30,冷蔵庫,外用薬,';
 
     document.getElementById('csvDownloadTemplate').addEventListener('click', function() {
         var bom = '\uFEFF';
         var blob = new Blob([bom + templateCsvText], { type: 'text/csv;charset=utf-8' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
-        a.href = url; a.download = '阮ｬ蜑､繧､繝ｳ繝昴・繝医ユ繝ｳ繝励Ξ繝ｼ繝・csv'; a.click();
+        a.href = url; a.download = '薬剤インポートテンプレート.csv'; a.click();
         URL.revokeObjectURL(url);
-        showToast('踏 繝・Φ繝励Ξ繝ｼ繝医ｒ繝繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺ｾ縺励◆');
+        showToast('📥 テンプレートをダウンロードしました');
     });
 
-    // 繝・Φ繝励Ξ繝ｼ繝医ｒ繧ｯ繝ｪ繝・・繝懊・繝峨↓繧ｳ繝斐・
+    // テンプレートをクリップボードにコピー
     document.getElementById('csvCopyTemplate').addEventListener('click', function() {
         if (navigator.clipboard) {
             navigator.clipboard.writeText(templateCsvText).then(function() {
-                showToast('搭 繝・Φ繝励Ξ繝ｼ繝医ｒ繧ｳ繝斐・縺励∪縺励◆');
+                showToast('📋 テンプレートをコピーしました');
             });
         } else {
-            // 繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ: 繝・く繧ｹ繝医お繝ｪ繧｢縺ｫ雋ｼ繧贋ｻ倥￠
+            // フォールバック: テキストエリアに貼り付け
             document.getElementById('csvTextInput').value = templateCsvText;
-            showToast('搭 繝・く繧ｹ繝域ｬ・↓繝・Φ繝励Ξ繝ｼ繝医ｒ蜈･蜉帙＠縺ｾ縺励◆');
+            showToast('📋 テキスト欄にテンプレートを入力しました');
         }
     });
 
-    // 繝・く繧ｹ繝郁ｲｼ繧贋ｻ倥￠繝懊ち繝ｳ
+    // テキスト貼り付けボタン
     document.getElementById('csvPasteBtn').addEventListener('click', function() {
         var text = document.getElementById('csvTextInput').value.trim();
-        if (!text) { alert('繝・く繧ｹ繝医ｒ雋ｼ繧贋ｻ倥￠縺ｦ縺上□縺輔＞'); return; }
+        if (!text) { alert('テキストを貼り付けてください'); return; }
         parseCsvAndPreview(text);
     });
 
-    // CSV繝輔ぃ繧､繝ｫ隱ｭ縺ｿ霎ｼ縺ｿ・・hift_JIS閾ｪ蜍募愛螳壼ｯｾ蠢懶ｼ・
+    // CSVファイル読み込み（Shift_JIS自動判定対応）
     function handleCsvFile(file) {
-        if (file.size > 1024 * 1024) { alert('繝輔ぃ繧､繝ｫ繧ｵ繧､繧ｺ縺ｯ1MB莉･荳九↓縺励※縺上□縺輔＞'); return; }
+        if (file.size > 1024 * 1024) { alert('ファイルサイズは1MB以下にしてください'); return; }
         var reader = new FileReader();
         reader.onload = function(e) {
             var text = e.target.result;
-            // 譁・ｭ怜喧縺第､懷・: 縲鯉ｿｽ縲阪′蜷ｫ縺ｾ繧後ｋ蝣ｴ蜷医・Shift_JIS縺ｧ蜀崎ｪｭ縺ｿ霎ｼ縺ｿ
+            // 文字化け検出: 「�」が含まれる場合はShift_JISで再読み込み
             if (text.indexOf('\ufffd') >= 0 || /[\x80-\x9f]/.test(text)) {
                 var reader2 = new FileReader();
                 reader2.onload = function(e2) {
@@ -2425,14 +2428,14 @@
         reader.readAsText(file, 'UTF-8');
     }
 
-    // CSV繝代・繧ｹ
+    // CSVパース
     function parseCsvText(text) {
         var lines = text.split(/\r?\n/);
         var result = [];
         for (var i = 0; i < lines.length; i++) {
             var line = lines[i].trim();
             if (!line) continue;
-            // 繝繝悶Ν繧ｯ繧ｩ繝ｼ繝亥ｯｾ蠢懊・CSV繝代・繧ｹ
+            // ダブルクォート対応のCSVパース
             var row = [];
             var inQuote = false;
             var field = '';
@@ -2462,25 +2465,25 @@
         return result;
     }
 
-    // 繝倥ャ繝繝ｼ蛻励・繝・ヴ繝ｳ繧ｰ・域ｰｴ謌ｸ繝帙・繝繧ｯ繝ｪ繝九ャ繧ｯ蠖｢蠑上↓繧ょｯｾ蠢懶ｼ・
+    // ヘッダー列マッピング（水戸ホームクリニック形式にも対応）
     var headerMap = {
-        '阮ｬ蜑､蜷・: 'name', '阮ｬ蜩∝錐': 'name', '蜷榊燕': 'name', '蜩∝錐': 'name', 'name': 'name', '蛹ｻ阮ｬ蜩∝錐': 'name',
-        '蝠・刀蜷・: 'name',
-        '謨ｰ驥・: 'quantity', '蛟区焚': 'quantity', 'quantity': 'quantity', 'qty': 'quantity',
-        '螳壽焚': 'quantity',
-        '蜊倅ｽ・: 'unit', 'unit': 'unit',
-        '豸郁ｲｻ譛滄剞': 'expiryDate', '譛滄剞': 'expiryDate', '譛牙柑譛滄剞': 'expiryDate', '菴ｿ逕ｨ譛滄剞': 'expiryDate', 'expiry': 'expiryDate', 'expiry_date': 'expiryDate',
-        '菫晉ｮ｡蝣ｴ謇': 'location', '蝣ｴ謇': 'location', '鄂ｮ縺榊ｴ': 'location', 'location': 'location',
-        '螟ｧ蛻・｡・: 'location',
-        '繧ｫ繝・ざ繝ｪ': 'category', '蛻・｡・: 'category', '遞ｮ蛻･': 'category', 'category': 'category',
-        '荳ｭ蛻・｡・: 'category',
-        '繝｡繝｢': 'memo', '蛯呵・: 'memo', 'memo': 'memo', 'note': 'memo', 'notes': 'memo',
-        // 豌ｴ謌ｸ繝帙・繝繧ｯ繝ｪ繝九ャ繧ｯ霑ｽ蜉繝輔ぅ繝ｼ繝ｫ繝・
-        'JAN繧ｳ繝ｼ繝・: 'janCode',
-        '隕乗ｼ繝ｻ螳ｹ驥・: 'spec', '隕乗ｼ': 'spec', '螳ｹ驥・: 'spec',
-        '繝｡繝ｼ繧ｫ繝ｼ蜷・: 'maker', '繝｡繝ｼ繧ｫ繝ｼ': 'maker', '陬ｽ騾蜈・: 'maker',
-        '蝠・刀繧ｳ繝ｼ繝・: 'barcode', 'barcode': 'barcode', '繝舌・繧ｳ繝ｼ繝・: 'barcode', '繧ｳ繝ｼ繝・: 'barcode', 'code': 'barcode',
-        '蜊雁・莉･荳九〒逋ｺ豕ｨ': '_ignore', '逋ｺ豕ｨ謨ｰ': '_ignore',
+        '薬剤名': 'name', '薬品名': 'name', '名前': 'name', '品名': 'name', 'name': 'name', '医薬品名': 'name',
+        '商品名': 'name',
+        '数量': 'quantity', '個数': 'quantity', 'quantity': 'quantity', 'qty': 'quantity',
+        '定数': 'quantity',
+        '単位': 'unit', 'unit': 'unit',
+        '消費期限': 'expiryDate', '期限': 'expiryDate', '有効期限': 'expiryDate', '使用期限': 'expiryDate', 'expiry': 'expiryDate', 'expiry_date': 'expiryDate',
+        '保管場所': 'location', '場所': 'location', '置き場': 'location', 'location': 'location',
+        '大分類': 'location',
+        'カテゴリ': 'category', '分類': 'category', '種別': 'category', 'category': 'category',
+        '中分類': 'category',
+        'メモ': 'memo', '備考': 'memo', 'memo': 'memo', 'note': 'memo', 'notes': 'memo',
+        // 水戸ホームクリニック追加フィールド
+        'JANコード': 'janCode',
+        '規格・容量': 'spec', '規格': 'spec', '容量': 'spec',
+        'メーカー名': 'maker', 'メーカー': 'maker', '製造元': 'maker',
+        '商品コード': 'barcode', 'barcode': 'barcode', 'バーコード': 'barcode', 'コード': 'barcode', 'code': 'barcode',
+        '半分以下で発注': '_ignore', '発注数': '_ignore',
     };
 
     function normalizeDate(val) {
@@ -2492,16 +2495,16 @@
         // YYYYMMDD
         m = val.match(/^(\d{4})(\d{2})(\d{2})$/);
         if (m) return m[1] + '-' + m[2] + '-' + m[3];
-        // YYYY/MM or YYYY-MM・域怦縺ｮ縺ｿ竊呈怦譛ｫ譌･・・
+        // YYYY/MM or YYYY-MM（月のみ→月末日）
         m = val.match(/^(\d{4})[\/\-](\d{1,2})$/);
         if (m) { var ld = new Date(parseInt(m[1]), parseInt(m[2]), 0).getDate(); return m[1] + '-' + ('0'+m[2]).slice(-2) + '-' + ('0'+ld).slice(-2); }
-        // YYYYMM・・譯√∵怦縺ｮ縺ｿ竊呈怦譛ｫ譌･・・
+        // YYYYMM（6桁、月のみ→月末日）
         m = val.match(/^(\d{4})(\d{2})$/);
         if (m) { var ld2 = new Date(parseInt(m[1]), parseInt(m[2]), 0).getDate(); return m[1] + '-' + m[2] + '-' + ('0'+ld2).slice(-2); }
         return val;
     }
 
-    // 繝倥ャ繝繝ｼ陦後°蛻､螳・
+    // ヘッダー行か判定
     function isHeaderRow(row) {
         var hits = 0;
         for (var i = 0; i < row.length; i++) {
@@ -2511,13 +2514,13 @@
         return hits >= 2;
     }
 
-    // CSV繝代・繧ｹ竊偵・繝ｬ繝薙Η繝ｼ陦ｨ遉ｺ
+    // CSVパース→プレビュー表示
     function parseCsvAndPreview(text) {
         var rows = parseCsvText(text);
-        if (rows.length === 0) { alert('繝・・繧ｿ縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ'); return; }
+        if (rows.length === 0) { alert('データが見つかりません'); return; }
 
-        // 繝倥ャ繝繝ｼ讀懷・
-        var colMap = {}; // 繧､繝ｳ繝・ャ繧ｯ繧ｹ 竊・繝輔ぅ繝ｼ繝ｫ繝牙錐
+        // ヘッダー検出
+        var colMap = {}; // インデックス → フィールド名
         var dataStartIdx = 0;
 
         if (isHeaderRow(rows[0])) {
@@ -2528,19 +2531,19 @@
                 if (mapped) colMap[i] = mapped;
             }
         } else {
-            // 繝倥ャ繝繝ｼ縺ｪ縺・ 繝・ヵ繧ｩ繝ｫ繝亥・鬆・
+            // ヘッダーなし: デフォルト列順
             var defaultOrder = ['name', 'quantity', 'unit', 'expiryDate', 'location', 'category', 'memo'];
             for (var i = 0; i < Math.min(rows[0].length, defaultOrder.length); i++) {
                 colMap[i] = defaultOrder[i];
             }
         }
 
-        // 繝・・繧ｿ陦後ｒ繝代・繧ｹ
+        // データ行をパース
         csvParsedData = [];
         for (var ri = dataStartIdx; ri < rows.length; ri++) {
             var row = rows[ri];
-            if (row.length === 1 && !row[0]) continue; // 遨ｺ陦後せ繧ｭ繝・・
-            var item = { name: '', quantity: 1, unit: '蛟・, expiryDate: '', location: '', category: '', memo: '', barcode: '', _valid: true, _errors: [], _janCode: '', _spec: '', _maker: '' };
+            if (row.length === 1 && !row[0]) continue; // 空行スキップ
+            var item = { name: '', quantity: 1, unit: '個', expiryDate: '', location: '', category: '', memo: '', barcode: '', _valid: true, _errors: [], _janCode: '', _spec: '', _maker: '' };
             for (var ci = 0; ci < row.length; ci++) {
                 var field = colMap[ci];
                 if (!field || field === '_ignore') continue;
@@ -2561,37 +2564,37 @@
                     item[field] = val;
                 }
             }
-            // 豌ｴ謌ｸ繝帙・繝繧ｯ繝ｪ繝九ャ繧ｯ蠖｢蠑上・蠕悟・逅・ 隕乗ｼ繧貞膚蜩∝錐縺ｫ邨仙粋縲゛AN/繝｡繝ｼ繧ｫ繝ｼ繧偵Γ繝｢縺ｫ
+            // 水戸ホームクリニック形式の後処理: 規格を商品名に結合、JAN/メーカーをメモに
             if (item._spec && item._spec.trim()) {
                 item.name = item.name + ' ' + item._spec.trim();
             }
             var memoExtra = [];
             if (item._janCode) memoExtra.push('JAN:' + item._janCode);
-            if (item._maker) memoExtra.push('繝｡繝ｼ繧ｫ繝ｼ:' + item._maker);
+            if (item._maker) memoExtra.push('メーカー:' + item._maker);
             if (memoExtra.length > 0) {
                 item.memo = item.memo ? item.memo + ' / ' + memoExtra.join(' / ') : memoExtra.join(' / ');
             }
-            // 繝舌Μ繝・・繧ｷ繝ｧ繝ｳ
-            if (!item.name) { item._valid = false; item._errors.push('阮ｬ蜑､蜷阪↑縺・); }
-            // 豸郁ｲｻ譛滄剞縺ｯ蠢・医〒縺ｯ縺ｪ縺・ｼ育黄蜩∝ｮ壽焚CSV縺ｪ縺ｩ譛滄剞縺ｪ縺励・繝・・繧ｿ繧０K・・
+            // バリデーション
+            if (!item.name) { item._valid = false; item._errors.push('薬剤名なし'); }
+            // 消費期限は必須ではない（物品定数CSVなど期限なしのデータもOK）
             if (item.expiryDate && !/^\d{4}-\d{2}-\d{2}$/.test(item.expiryDate)) {
-                item._valid = false; item._errors.push('譌･莉倅ｸ肴ｭ｣');
+                item._valid = false; item._errors.push('日付不正');
             }
             if (!item.expiryDate) {
-                item._errors.push('窶ｻ譛滄剞縺ｪ縺・);
+                item._errors.push('※期限なし');
             }
             csvParsedData.push(item);
         }
 
-        if (csvParsedData.length === 0) { alert('譛牙柑縺ｪ繝・・繧ｿ陦後′縺ゅｊ縺ｾ縺帙ｓ'); return; }
+        if (csvParsedData.length === 0) { alert('有効なデータ行がありません'); return; }
 
-        // 繝励Ξ繝薙Η繝ｼ謠冗判
+        // プレビュー描画
         renderCsvPreview();
         document.getElementById('csvStep1').classList.add('hidden');
         document.getElementById('csvStep2').classList.remove('hidden');
     }
 
-    // 繝励Ξ繝薙Η繝ｼ謠冗判
+    // プレビュー描画
     function renderCsvPreview() {
         var table = document.getElementById('csvPreviewTable');
         var validCount = 0, errorCount = 0;
@@ -2599,23 +2602,23 @@
             if (csvParsedData[i]._valid) validCount++; else errorCount++;
         }
 
-        // 邨ｱ險医ヰ繝ｼ
+        // 統計バー
         var stats = document.getElementById('csvStats');
-        stats.innerHTML = '<span class="csv-stat csv-stat-ok">笨・譛牙柑: ' + validCount + '莉ｶ</span>';
-        if (errorCount > 0) stats.innerHTML += '<span class="csv-stat csv-stat-err">笞・・繧ｨ繝ｩ繝ｼ: ' + errorCount + '莉ｶ</span>';
-        stats.innerHTML += '<span class="csv-stat" style="background:rgba(148,163,184,.1);color:#94a3b8;">蜷郁ｨ・ ' + csvParsedData.length + '莉ｶ</span>';
+        stats.innerHTML = '<span class="csv-stat csv-stat-ok">✅ 有効: ' + validCount + '件</span>';
+        if (errorCount > 0) stats.innerHTML += '<span class="csv-stat csv-stat-err">⚠️ エラー: ' + errorCount + '件</span>';
+        stats.innerHTML += '<span class="csv-stat" style="background:rgba(148,163,184,.1);color:#94a3b8;">合計: ' + csvParsedData.length + '件</span>';
 
-        // 繝・・繝悶Ν
-        var html = '<thead><tr><th>#</th><th>阮ｬ蜑､蜷・/th><th>謨ｰ驥・/th><th>蜊倅ｽ・/th><th>豸郁ｲｻ譛滄剞</th><th>蝣ｴ謇</th><th>繧ｫ繝・ざ繝ｪ</th></tr></thead><tbody>';
+        // テーブル
+        var html = '<thead><tr><th>#</th><th>薬剤名</th><th>数量</th><th>単位</th><th>消費期限</th><th>場所</th><th>カテゴリ</th></tr></thead><tbody>';
         for (var i = 0; i < csvParsedData.length; i++) {
             var d = csvParsedData[i];
             var cls = d._valid ? '' : ' class="csv-row-error"';
             html += '<tr' + cls + '>';
             html += '<td>' + (i+1) + '</td>';
-            html += '<td title="' + escHtml(d.name) + '">' + escHtml(d.name || '窶・) + '</td>';
+            html += '<td title="' + escHtml(d.name) + '">' + escHtml(d.name || '—') + '</td>';
             html += '<td>' + d.quantity + '</td>';
             html += '<td>' + escHtml(d.unit) + '</td>';
-            html += '<td>' + escHtml(d.expiryDate || '窶・) + '</td>';
+            html += '<td>' + escHtml(d.expiryDate || '—') + '</td>';
             html += '<td>' + escHtml(d.location) + '</td>';
             html += '<td>' + escHtml(d.category) + '</td>';
             html += '</tr>';
@@ -2623,13 +2626,13 @@
         html += '</tbody>';
         table.innerHTML = html;
 
-        // 繧ｨ繝ｩ繝ｼ隧ｳ邏ｰ
+        // エラー詳細
         var errDiv = document.getElementById('csvErrors');
         if (errorCount > 0) {
             var errHtml = '<div style="font-size:11px;color:#f87171;line-height:1.6">';
             for (var i = 0; i < csvParsedData.length; i++) {
                 if (!csvParsedData[i]._valid) {
-                    errHtml += '陦・ + (i+1) + ': ' + csvParsedData[i]._errors.join(', ') + '<br>';
+                    errHtml += '行' + (i+1) + ': ' + csvParsedData[i]._errors.join(', ') + '<br>';
                 }
             }
             errHtml += '</div>';
@@ -2638,7 +2641,7 @@
             errDiv.innerHTML = '';
         }
 
-        // 繧､繝ｳ繝昴・繝医・繧ｿ繝ｳ縺ｮ譛牙柑/辟｡蜉ｹ
+        // インポートボタンの有効/無効
         document.getElementById('csvImportBtn').disabled = validCount === 0;
         if (validCount === 0) {
             document.getElementById('csvImportBtn').style.opacity = '0.4';
@@ -2649,7 +2652,7 @@
 
     function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    // 繝輔ぃ繧､繝ｫ螟画峩繝懊ち繝ｳ
+    // ファイル変更ボタン
     document.getElementById('csvBackBtn').addEventListener('click', function() {
         document.getElementById('csvStep1').classList.remove('hidden');
         document.getElementById('csvStep2').classList.add('hidden');
@@ -2657,69 +2660,69 @@
         csvParsedData = [];
     });
 
-    // 繧､繝ｳ繝昴・繝亥ｮ溯｡・
+    // インポート実行
     document.getElementById('csvImportBtn').addEventListener('click', function() {
         var validItems = csvParsedData.filter(function(d) { return d._valid; });
-        if (validItems.length === 0) { alert('譛牙柑縺ｪ繝・・繧ｿ縺後≠繧翫∪縺帙ｓ'); return; }
-        if (!confirm(validItems.length + '莉ｶ繧偵う繝ｳ繝昴・繝医＠縺ｾ縺吶°・・)) return;
+        if (validItems.length === 0) { alert('有効なデータがありません'); return; }
+        if (!confirm(validItems.length + '件をインポートしますか？')) return;
 
         var btn = document.getElementById('csvImportBtn');
         btn.disabled = true;
-        btn.textContent = '竢ｳ 繧､繝ｳ繝昴・繝井ｸｭ...';
+        btn.textContent = '⏳ インポート中...';
 
-        // _valid, _errors 繧帝勁螟・
+        // _valid, _errors を除外
         var items = validItems.map(function(d) {
             return { name: d.name, quantity: d.quantity, unit: d.unit, expiryDate: d.expiryDate, location: d.location, category: d.category, memo: d.memo, barcode: d.barcode || '' };
         });
 
         apiCall('POST', '/api/room/' + roomId + '/bulk-add', { items: items, addedBy: myName }, function(status, data) {
             btn.disabled = false;
-            btn.textContent = '笨・繧､繝ｳ繝昴・繝亥ｮ溯｡・;
+            btn.textContent = '✅ インポート実行';
             if (status === 200 && data) {
                 document.getElementById('csvStep2').classList.add('hidden');
                 document.getElementById('csvStep3').classList.remove('hidden');
-                document.getElementById('csvResultMsg').textContent = '脂 ' + data.added + '莉ｶ縺ｮ繧､繝ｳ繝昴・繝医′螳御ｺ・＠縺ｾ縺励◆・・;
+                document.getElementById('csvResultMsg').textContent = '🎉 ' + data.added + '件のインポートが完了しました！';
                 if (data.errors && data.errors.length > 0) {
-                    var errHtml = '笞・・' + data.errors.length + '莉ｶ縺ｮ繧ｨ繝ｩ繝ｼ:<br>';
+                    var errHtml = '⚠️ ' + data.errors.length + '件のエラー:<br>';
                     for (var i = 0; i < data.errors.length; i++) {
-                        errHtml += '陦・ + data.errors[i].row + ': ' + data.errors[i].error + '<br>';
+                        errHtml += '行' + data.errors[i].row + ': ' + data.errors[i].error + '<br>';
                     }
                     document.getElementById('csvResultErrors').innerHTML = errHtml;
                 } else {
                     document.getElementById('csvResultErrors').innerHTML = '';
                 }
-                showToast('塘 CSV繧､繝ｳ繝昴・繝亥ｮ御ｺ・ｼ・);
-                // 繝壹・繧ｸ繝ｪ繝ｭ繝ｼ繝峨↑縺励〒繝・・繧ｿ繧貞渚譏
+                showToast('📄 CSVインポート完了！');
+                // ページリロードなしでデータを反映
                 refreshRoomData();
             } else {
-                alert('繧､繝ｳ繝昴・繝医↓螟ｱ謨励＠縺ｾ縺励◆: ' + (data ? data.error : '騾壻ｿ｡繧ｨ繝ｩ繝ｼ'));
+                alert('インポートに失敗しました: ' + (data ? data.error : '通信エラー'));
             }
         });
     });
 
-    // 謫堺ｽ懊Ο繧ｰ繝｢繝ｼ繝繝ｫ陦ｨ遉ｺ
+    // 操作ログモーダル表示
     window.openLogModal = function() {
         var logEl = document.getElementById('logList');
         var logs = (roomData && roomData.usageLog) ? roomData.usageLog : [];
         if (logs.length === 0) {
-            logEl.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:32px 0">縺ｾ縺謫堺ｽ懊Ο繧ｰ縺後≠繧翫∪縺帙ｓ</div>';
+            logEl.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:32px 0">まだ操作ログがありません</div>';
         } else {
             var html = '';
-            // 譁ｰ縺励＞鬆・↓陦ｨ遉ｺ
+            // 新しい順に表示
             for (var i = logs.length - 1; i >= 0; i--) {
                 var log = logs[i];
                 var dt = log.at ? new Date(log.at) : null;
                 var timeStr = dt ? (dt.getMonth()+1) + '/' + dt.getDate() + ' ' + ('0'+dt.getHours()).slice(-2) + ':' + ('0'+dt.getMinutes()).slice(-2) : '-';
-                var icon = log.delta > 0 ? '嶋' : log.delta < 0 ? '悼' : '売';
+                var icon = log.delta > 0 ? '📈' : log.delta < 0 ? '📉' : '🔄';
                 var color = log.delta > 0 ? '#10b981' : log.delta < 0 ? '#f43f5e' : '#94a3b8';
                 var deltaStr = log.delta > 0 ? '+' + log.delta : '' + log.delta;
                 html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(148,163,184,.15)">';
                 html += '<span style="font-size:20px">' + icon + '</span>';
                 html += '<div style="flex:1;min-width:0">';
                 html += '<div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (log.name || '-') + '</div>';
-                html += '<div style="font-size:11px;color:#94a3b8">' + timeStr + ' / ' + (log.by || '荳肴・') + '</div>';
+                html += '<div style="font-size:11px;color:#94a3b8">' + timeStr + ' / ' + (log.by || '不明') + '</div>';
                 html += '</div>';
-                html += '<div style="font-weight:700;font-size:15px;color:' + color + '">' + deltaStr + ' 竊・' + log.newQty + '</div>';
+                html += '<div style="font-weight:700;font-size:15px;color:' + color + '">' + deltaStr + ' → ' + log.newQty + '</div>';
                 html += '</div>';
             }
             logEl.innerHTML = html;
@@ -2727,7 +2730,7 @@
         document.getElementById('logModal').classList.add('show');
     };
 
-    // === 蜿ょ刈繧ｹ繧ｿ繝・ヵ荳隕ｧ謠冗判 ===
+    // === 参加スタッフ一覧描画 ===
     function renderStaffList() {
         var section = document.getElementById('staffSection');
         var listEl = document.getElementById('staffList');
@@ -2741,7 +2744,7 @@
         listEl.innerHTML = '';
         var adminName = (roomData && roomData.admin) ? roomData.admin : '';
         var isMeAdmin = adminName === myName;
-        // 譛邨ゅい繧ｯ繧ｻ繧ｹ鬆・↓繧ｽ繝ｼ繝茨ｼ域眠縺励＞鬆・ｼ峨√◆縺縺礼ｮ｡逅・ｺｺ縺ｯ蟶ｸ縺ｫ蜈磯ｭ
+        // 最終アクセス順にソート（新しい順）、ただし管理人は常に先頭
         var sorted = members.slice().sort(function(a, b) {
             if (a.name === adminName) return -1;
             if (b.name === adminName) return 1;
@@ -2752,15 +2755,15 @@
                 var isAdminMember = m.name === adminName;
                 var row = document.createElement('div');
                 row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(148,163,184,.1);';
-                // 繧｢繝舌ち繝ｼ・亥錐蜑阪・鬆ｭ譁・ｭ暦ｼ・
+                // アバター（名前の頭文字）
                 var avatar = document.createElement('div');
                 var colors = ['#0ea5e9','#8b5cf6','#f59e0b','#10b981','#f43f5e','#6366f1','#ec4899','#14b8a6'];
                 var colorIdx = 0;
                 for (var ci = 0; ci < m.name.length; ci++) colorIdx += m.name.charCodeAt(ci);
                 var avatarBg = isAdminMember ? '#f59e0b' : colors[colorIdx % colors.length];
                 avatar.style.cssText = 'width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;background:' + avatarBg + ';';
-                avatar.textContent = isAdminMember ? '荘' : m.name.charAt(0);
-                // 蜷榊燕 & 譛邨よｴｻ蜍・
+                avatar.textContent = isAdminMember ? '👑' : m.name.charAt(0);
+                // 名前 & 最終活動
                 var info = document.createElement('div');
                 info.style.cssText = 'flex:1;min-width:0;';
                 var nameRow = document.createElement('div');
@@ -2769,15 +2772,15 @@
                 nameEl.style.cssText = 'font-size:13px;font-weight:700;color:#f1f5f9;';
                 nameEl.textContent = m.name;
                 if (m.name === myName) {
-                    nameEl.textContent += ' (閾ｪ蛻・';
+                    nameEl.textContent += ' (自分)';
                     nameEl.style.color = '#38bdf8';
                 }
                 nameRow.appendChild(nameEl);
-                // 邂｡逅・ｺｺ繝舌ャ繧ｸ
+                // 管理人バッジ
                 if (isAdminMember) {
                     var badge = document.createElement('span');
                     badge.style.cssText = 'font-size:9px;padding:1px 6px;border-radius:6px;background:rgba(245,158,11,.2);color:#fbbf24;font-weight:900;white-space:nowrap;';
-                    badge.textContent = '邂｡逅・ｺｺ';
+                    badge.textContent = '管理人';
                     nameRow.appendChild(badge);
                 }
                 var timeEl = document.createElement('div');
@@ -2786,41 +2789,41 @@
                     var dt = new Date(m.lastSeen);
                     var now = new Date();
                     var diffMin = Math.floor((now - dt) / 60000);
-                    if (diffMin < 1) timeEl.textContent = '莉翫い繧ｯ繝・ぅ繝・;
-                    else if (diffMin < 60) timeEl.textContent = diffMin + '蛻・燕';
-                    else if (diffMin < 1440) timeEl.textContent = Math.floor(diffMin / 60) + '譎る俣蜑・;
-                    else timeEl.textContent = Math.floor(diffMin / 1440) + '譌･蜑・;
+                    if (diffMin < 1) timeEl.textContent = '今アクティブ';
+                    else if (diffMin < 60) timeEl.textContent = diffMin + '分前';
+                    else if (diffMin < 1440) timeEl.textContent = Math.floor(diffMin / 60) + '時間前';
+                    else timeEl.textContent = Math.floor(diffMin / 1440) + '日前';
                 }
                 info.appendChild(nameRow);
                 info.appendChild(timeEl);
-                // 繧ｪ繝ｳ繝ｩ繧､繝ｳ繧､繝ｳ繧ｸ繧ｱ繝ｼ繧ｿ繝ｼ
+                // オンラインインジケーター
                 var indicator = document.createElement('div');
                 var lastSeenDate = m.lastSeen ? new Date(m.lastSeen) : null;
                 var isRecent = lastSeenDate && (new Date() - lastSeenDate) < 5 * 60 * 1000;
                 indicator.style.cssText = 'width:8px;height:8px;border-radius:50%;flex-shrink:0;background:' + (isRecent ? '#10b981' : '#475569') + ';';
-                indicator.title = isRecent ? '繧ｪ繝ｳ繝ｩ繧､繝ｳ' : '繧ｪ繝輔Λ繧､繝ｳ';
+                indicator.title = isRecent ? 'オンライン' : 'オフライン';
 
-                // 邂｡逅・ｺｺ縺ｮ蝣ｴ蜷医∽ｻ悶Γ繝ｳ繝舌・縺ｫ縲梧ｨｩ髯占ｭｲ貂｡縲阪・繧ｿ繝ｳ陦ｨ遉ｺ
+                // 管理人の場合、他メンバーに「権限譲渡」ボタン表示
                 var actionBtns = document.createElement('div');
                 actionBtns.style.cssText = 'display:flex;gap:4px;flex-shrink:0;';
                 if (isMeAdmin && !isAdminMember && m.name !== myName) {
                     var transferBtn = document.createElement('button');
                     transferBtn.style.cssText = 'font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.1);color:#fbbf24;cursor:pointer;font-weight:700;white-space:nowrap;';
-                    transferBtn.textContent = '荘 隴ｲ貂｡';
+                    transferBtn.textContent = '👑 譲渡';
                     transferBtn.addEventListener('click', function() {
-                        if (confirm(m.name + ' 縺ｫ邂｡逅・ｺｺ讓ｩ髯舌ｒ隴ｲ貂｡縺励∪縺吶°・歃n・医≠縺ｪ縺溘・繧ｹ繧ｿ繝・ヵ縺ｫ縺ｪ繧翫∪縺呻ｼ・)) {
+                        if (confirm(m.name + ' に管理人権限を譲渡しますか？\n（あなたはスタッフになります）')) {
                             apiCall('POST', '/api/room/' + roomId + '/transfer-admin', { requestBy: myName, newAdmin: m.name }, function(st, rd) {
                                 if (st === 200) {
-                                    showToast('荘 ' + m.name + ' 縺ｫ讓ｩ髯舌ｒ隴ｲ貂｡縺励∪縺励◆');
+                                    showToast('👑 ' + m.name + ' に権限を譲渡しました');
                                     refreshRoomData();
                                 } else {
-                                    alert('隴ｲ貂｡縺ｫ螟ｱ謨・ ' + (rd ? rd.error : ''));
+                                    alert('譲渡に失敗: ' + (rd ? rd.error : ''));
                                 }
                             });
                         }
                     });
                     actionBtns.appendChild(transferBtn);
-                    // 繝｡繝ｳ繝舌・蜑企勁繝懊ち繝ｳ
+                    // メンバー削除ボタン
                     var kickBtn = document.createElement('button');
                     kickBtn.style.cssText = 'font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.1);color:#f87171;cursor:pointer;font-weight:700;white-space:nowrap;';
                     kickBtn.textContent = '\ud83d\uddd1 \u524a\u9664';
@@ -2840,36 +2843,36 @@
             })(sorted[i]);
         }
 
-        // 騾蜃ｺ繝懊ち繝ｳ・育ｮ｡逅・ｺｺ莉･螟悶・繧ｹ繧ｿ繝・ヵ縺瑚・蛻・〒騾蜃ｺ・・
+        // 退出ボタン（管理人以外のスタッフが自分で退出）
         var adminName2 = (roomData && roomData.admin) ? roomData.admin : '';
         if (myName && myName !== adminName2) {
             var leaveBtn = document.createElement('button');
             leaveBtn.style.cssText = 'width:100%;margin-top:10px;padding:8px;border-radius:10px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08);color:#f87171;font-size:12px;font-weight:700;cursor:pointer;text-align:center;';
-            leaveBtn.textContent = '坎 縺薙・繧ｯ繝ｪ繝九ャ繧ｯ縺九ｉ騾蜃ｺ縺吶ｋ';
+            leaveBtn.textContent = '🚪 このクリニックから退出する';
             leaveBtn.addEventListener('click', function() {
-                if (confirm('縺薙・繧ｯ繝ｪ繝九ャ繧ｯ縺九ｉ騾蜃ｺ縺励∪縺吶°・歃n・医ョ繝ｼ繧ｿ縺ｯ蜑企勁縺輔ｌ縺ｾ縺帙ｓ・・)) {
+                if (confirm('このクリニックから退出しますか？\n（データは削除されません）')) {
                     apiCall('POST', '/api/room/' + roomId + '/leave', { userName: myName }, function(st, rd) {
                         if (st === 200) {
                             removeFromHistory(roomId);
-                            showToast('坎 騾蜃ｺ縺励∪縺励◆');
+                            showToast('🚪 退出しました');
                             location.href = '/';
                         } else {
-                            alert('騾蜃ｺ縺ｫ螟ｱ謨・ ' + (rd ? rd.error : ''));
+                            alert('退出に失敗: ' + (rd ? rd.error : ''));
                         }
                     });
                 }
             });
             listEl.appendChild(leaveBtn);
         } else if (myName && myName === adminName2 && members.length > 1) {
-            // 邂｡逅・ｺｺ縺ｧ莉悶Γ繝ｳ繝舌・縺後＞繧句ｴ蜷医・隴ｲ貂｡繧剃ｿ・☆繝｡繝・そ繝ｼ繧ｸ
+            // 管理人で他メンバーがいる場合は譲渡を促すメッセージ
             var adminNote = document.createElement('div');
             adminNote.style.cssText = 'font-size:10px;color:#64748b;text-align:center;margin-top:6px;padding:4px;';
-            adminNote.textContent = '窶ｻ 騾蜃ｺ縺吶ｋ縺ｫ縺ｯ蜈医↓繧ｹ繧ｿ繝・ヵ縺ｸ邂｡逅・ｺｺ繧定ｭｲ貂｡縺励※縺上□縺輔＞';
+            adminNote.textContent = '※ 退出するには先にスタッフへ管理人を譲渡してください';
             listEl.appendChild(adminNote);
         }
     }
 
-    // 繧ｹ繧ｿ繝・ヵ荳隕ｧ縺ｮ髢矩哩繝医げ繝ｫ
+    // スタッフ一覧の開閉トグル
     var staffToggleBtn = document.getElementById('staffToggleBtn');
     if (staffToggleBtn) {
         var staffVisible = true;
@@ -2882,13 +2885,13 @@
         });
     }
 
-    // 諡・ｽ楢・錐繝ｩ繝吶Ν蛻晄悄蛹・
+    // 担当者名ラベル初期化
     if (myName) {
         var nl = document.getElementById('myNameLabel');
         if (nl) nl.textContent = '\ud83d\udc64 ' + myName;
     }
 
-    // --- 諡｡蠑ｵ讖溯・逕ｨ繧ｰ繝ｭ繝ｼ繝舌Ν蜈ｬ髢・---
+    // --- 拡張機能用グローバル公開 ---
     window._medCurrentCategory = currentCategory;
     window._medSelectMode = selectMode;
     window._medSelectedMids = selectedMids;
@@ -2897,17 +2900,17 @@
     window._medMyName = myName;
     window._medRoomData = roomData;
     window._medRenderMedicines = function() {
-        // 繧ｰ繝ｭ繝ｼ繝舌Ν縺九ｉ蜷梧悄
+        // グローバルから同期
         currentCategory = window._medCurrentCategory || 'all';
         selectMode = window._medSelectMode || false;
         selectedMids = window._medSelectedMids || new Set();
         renderMedicines();
     };
-    // loadRoom螳御ｺ・凾縺ｫ繧ｰ繝ｭ繝ｼ繝舌Ν譖ｴ譁ｰ縺吶ｋ繝輔ャ繧ｯ繧定ｨｭ螳・
+    // loadRoom完了時にグローバル更新するフックを設定
     var origLoadRoom = loadRoom;
     loadRoom = function() {
         origLoadRoom();
-        // loadRoom蜀・・繧ｳ繝ｼ繝ｫ繝舌ャ繧ｯ縺ｧroomData/roomId縺梧峩譁ｰ縺輔ｌ繧九◆繧√∵ｬ｡縺ｮrender縺ｧ蜷梧悄
+        // loadRoom内のコールバックでroomData/roomIdが更新されるため、次のrenderで同期
     };
     var origRefresh = window.refreshRoomData;
     window.refreshRoomData = function() {
