@@ -926,16 +926,33 @@
                 apiCall('GET', '/api/group/' + gid, null, function(st, group) {
                     pending--;
                     if (st === 200 && group) {
+                        var roomIds = group.roomIds || [];
+                        // ダッシュボードボタン
                         var btn = document.createElement('button');
                         btn.style.cssText = 'background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;width:100%;margin-bottom:6px;padding:12px;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;';
-                        btn.innerHTML = '<span>📊 ' + group.name + '</span><span style="font-size:11px;opacity:0.7;">' + (group.roomIds || []).length + '院</span>';
+                        btn.innerHTML = '<span>📊 ' + group.name + '</span><span style="font-size:11px;opacity:0.7;">' + roomIds.length + '院</span>';
                         btn.addEventListener('click', function() { openDashboard(gid); });
                         dashList.appendChild(btn);
+
+                        // クリニック名をlocalStorageの履歴から解決
+                        var history = getHistory();
+                        var clinicHtml = '';
+                        for (var ri = 0; ri < roomIds.length; ri++) {
+                            var found = history.find(function(h) { return h.id === roomIds[ri]; });
+                            var cName = found ? found.name : roomIds[ri].substring(0, 8) + '...';
+                            clinicHtml += '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px;background:rgba(139,92,246,0.08);border-radius:6px;margin-bottom:3px;">' +
+                                '<span style="font-size:11px;color:#c4b5fd;">🏥 ' + cName + '</span>' +
+                                '<button style="background:none;border:none;color:#f87171;font-size:10px;cursor:pointer;padding:2px 6px;" onclick="removeRoomFromGroup(\'' + gid + '\',\'' + roomIds[ri] + '\')">✕</button>' +
+                                '</div>';
+                        }
+
+                        // 管理カード
                         var card = document.createElement('div');
                         card.style.cssText = 'padding:10px;background:#0f172a;border:1px solid #334155;border-radius:10px;margin-bottom:8px;';
-                        card.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div style="font-size:13px;color:#a78bfa;font-weight:900;">🏢 ' + group.name + '</div><span style="font-size:10px;color:#64748b;">' + (group.roomIds||[]).length + '院</span></div>' +
+                        card.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div style="font-size:13px;color:#a78bfa;font-weight:900;">🏢 ' + group.name + '</div><span style="font-size:10px;color:#64748b;">' + roomIds.length + '院</span></div>' +
+                            '<div style="margin:6px 0;">' + clinicHtml + '</div>' +
                             '<div style="font-size:10px;color:#475569;">ID: <span style="font-family:monospace;color:#94a3b8;cursor:pointer;" onclick="copyGid(\'' + gid + '\')">' + gid + '</span> 📋</div>' +
-                            '<div style="display:flex;gap:4px;margin-top:6px;"><button class="btn btn-outline" style="font-size:10px;padding:4px 8px;" onclick="manageGroupClinics(\'' + gid + '\')">🏥 クリニック管理</button><button class="btn btn-outline" style="font-size:10px;padding:4px 8px;color:#f87171;border-color:#f87171;" onclick="leaveGroup(\'' + gid + '\')">離脱</button></div>';
+                            '<div style="display:flex;gap:4px;margin-top:6px;"><button class="btn btn-outline" style="font-size:10px;padding:4px 8px;" onclick="manageGroupClinics(\'' + gid + '\')">➕ クリニック追加</button><button class="btn btn-outline" style="font-size:10px;padding:4px 8px;color:#f87171;border-color:#f87171;" onclick="leaveGroup(\'' + gid + '\')">離脱</button></div>';
                         listSection.appendChild(card);
                     } else if (st === 404) {
                         removeGroupId(gid);
@@ -983,6 +1000,17 @@
     };
     window.copyGid = function(gid) {
         if (navigator.clipboard) { navigator.clipboard.writeText(gid).then(function() { showToast('📋 グループIDをコピーしました'); }); }
+    };
+    window.removeRoomFromGroup = function(gid, roomId) {
+        if (!confirm('このクリニックをグループから外しますか？')) return;
+        apiCall('POST', '/api/group/' + gid + '/remove-room', { roomId: roomId }, function(st) {
+            if (st === 200) {
+                showToast('✅ グループから外しました');
+                renderGroupSection();
+            } else {
+                showToast('エラーが発生しました');
+            }
+        });
     };
     window.manageGroupClinics = function(gid) {
         apiCall('GET', '/api/group/' + gid, null, function(st, group) {
