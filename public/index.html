@@ -2061,16 +2061,15 @@
         if (lotSection) {
             if (Array.isArray(med.lots) && med.lots.length > 0) {
                 var unit = med.unit || '個';
-                var html = '<div style="font-size:12px;font-weight:900;color:#38bdf8;margin-bottom:6px;">📦 ロット別数量 (' + med.lots.length + ')</div>';
-                html += '<div style="font-size:10px;color:#64748b;margin-bottom:8px;">※ ロットの数量を変更すると総数に反映されます</div>';
+                var html = '<div style="font-size:12px;font-weight:900;color:#38bdf8;margin-bottom:6px;">📦 ロット別管理 (' + med.lots.length + ')</div>';
+                html += '<div style="font-size:10px;color:#64748b;margin-bottom:8px;">※ ロットの数量・期限を変更できます</div>';
                 for (var i = 0; i < med.lots.length; i++) {
                     var l = med.lots[i];
                     var ls = getExpiryStatus(l.expiryDate);
                     var lsColor = ls.status === 'danger' ? '#f87171' : (ls.status === 'warn' ? '#fbbf24' : '#34d399');
-                    html += '<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 8px;margin-bottom:4px;background:rgba(15,23,42,.5);border-radius:8px;border:1px solid #334155;">';
+                    html += '<div style="display:flex;align-items:center;gap:6px;font-size:12px;padding:6px 8px;margin-bottom:4px;background:rgba(15,23,42,.5);border-radius:8px;border:1px solid #334155;flex-wrap:wrap;">';
                     html += '<span style="color:' + lsColor + ';font-size:8px;">●</span>';
-                    html += '<span style="color:#e2e8f0;min-width:80px;">' + formatDate(l.expiryDate) + '</span>';
-                    html += '<span style="font-size:10px;color:#64748b;min-width:55px;">' + ls.label + '</span>';
+                    html += '<input type="date" class="edit-lot-expiry" data-lot="' + i + '" value="' + (l.expiryDate || '') + '" style="width:130px;padding:4px 6px;border:1px solid #334155;border-radius:6px;background:#0f172a;color:#e2e8f0;font-size:12px;">';
                     html += '<div style="display:flex;align-items:center;gap:4px;margin-left:auto;">';
                     html += '<button type="button" class="lot-adj-btn" data-lot="' + i + '" data-delta="-1" style="width:26px;height:26px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;border-radius:6px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>';
                     html += '<input type="number" class="edit-lot-qty" data-lot="' + i + '" value="' + l.quantity + '" inputmode="numeric" style="width:50px;text-align:center;padding:4px;border:1px solid #334155;border-radius:6px;background:#0f172a;color:#f1f5f9;font-size:13px;font-weight:700;">';
@@ -2121,16 +2120,19 @@
         var mid = document.getElementById('editMid').value;
         // ロット別数量を収集
         var lotInputs = document.querySelectorAll('.edit-lot-qty');
+        var lotExpiryInputs = document.querySelectorAll('.edit-lot-expiry');
         var lots = null;
         if (lotInputs.length > 0) {
             lots = [];
-            var med = roomData.medicines.find(function(m) { return m.mid === mid; });
             for (var li = 0; li < lotInputs.length; li++) {
                 var lotIdx = parseInt(lotInputs[li].getAttribute('data-lot'));
                 var lotQty = parseInt(lotInputs[li].value) || 0;
-                if (med && Array.isArray(med.lots) && med.lots[lotIdx]) {
-                    lots.push({ expiryDate: med.lots[lotIdx].expiryDate, quantity: lotQty });
+                // 期限はedit-lot-expiryから直接取得（変更を反映）
+                var lotExpiry = '';
+                if (lotExpiryInputs[li]) {
+                    lotExpiry = lotExpiryInputs[li].value || '';
                 }
+                lots.push({ expiryDate: lotExpiry, quantity: lotQty });
             }
         }
         var data = {
