@@ -209,18 +209,8 @@
 
         <!-- クリニック一覧 -->
         <div id="historySection" class="card hidden">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                <h3 style="margin:0;">🏥 クリニックを選択</h3>
-                <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;" id="toggleSelectMode" onclick="toggleClinicSelect()">☑️ 選択</button>
-            </div>
+            <h3>🏥 クリニックを選択</h3>
             <div id="historyList"></div>
-            <div id="clinicSelectBar" class="hidden" style="margin-top:8px;padding:10px;background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:10px;border:1px solid #6366f1;">
-                <div style="font-size:12px;color:#a5b4fc;margin-bottom:6px;" id="selectCount">0件選択中</div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <button class="btn btn-primary" style="flex:1;font-size:12px;padding:8px;" onclick="createGroupFromSelected()">✨ 選択からグループ作成</button>
-                    <button class="btn btn-outline" style="font-size:12px;padding:8px;" onclick="toggleClinicSelect()">キャンセル</button>
-                </div>
-            </div>
         </div>
 
         <!-- 新規作成 -->
@@ -715,23 +705,7 @@
                 row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
 
                 var card = document.createElement('a');
-                // 選択モード時のチェックボックス
-                if (clinicSelectMode) {
-                    var cbWrap = document.createElement('label');
-                    cbWrap.style.cssText = 'display:flex;align-items:center;justify-content:center;width:36px;height:36px;flex-shrink:0;cursor:pointer;';
-                    var cb = document.createElement('input');
-                    cb.type = 'checkbox';
-                    cb.id = 'cb_' + h.id;
-                    cb.checked = selectedClinicIds.has(h.id);
-                    cb.style.cssText = 'width:20px;height:20px;accent-color:#8b5cf6;cursor:pointer;';
-                    cb.addEventListener('change', (function(hid) { return function() { toggleClinicCheck(hid); }; })(h.id));
-                    cbWrap.appendChild(cb);
-                    row.appendChild(cbWrap);
-                }
-
-                var card = document.createElement('a');
-                card.href = clinicSelectMode ? 'javascript:void(0)' : '/room/' + h.id;
-                if (clinicSelectMode) { card.addEventListener('click', (function(hid) { return function(e) { e.preventDefault(); toggleClinicCheck(hid); }; })(h.id)); }
+                card.href = '/room/' + h.id;
                 card.style.cssText = 'flex:1;display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,#0f172a,#1a2332);border-radius:12px;text-decoration:none;color:#e2e8f0;border:1px solid #334155;transition:all .2s;min-width:0;';
                 card.onmouseenter = function() { this.style.borderColor = '#0ea5e9'; this.style.transform = 'translateY(-1px)'; };
                 card.onmouseleave = function() { this.style.borderColor = '#334155'; this.style.transform = 'none'; };
@@ -830,8 +804,6 @@
 
     // === 系列グループ管理（複数グループ対応） ===
     var currentGroupId = null;
-    var clinicSelectMode = false;
-    var selectedClinicIds = new Set();
 
     function getGroupIds() {
         try {
@@ -849,62 +821,6 @@
     function addGroupId(gid) { var ids = getGroupIds(); if (ids.indexOf(gid) === -1) { ids.push(gid); saveGroupIds(ids); } }
     function removeGroupId(gid) { saveGroupIds(getGroupIds().filter(function(id) { return id !== gid; })); }
 
-    // クリニック選択モード切替
-    window.toggleClinicSelect = function() {
-        clinicSelectMode = !clinicSelectMode;
-        selectedClinicIds.clear();
-        var bar = document.getElementById('clinicSelectBar');
-        var btn = document.getElementById('toggleSelectMode');
-        if (clinicSelectMode) {
-            bar.classList.remove('hidden');
-            btn.textContent = '✕ 解除';
-            btn.style.color = '#f87171';
-            btn.style.borderColor = '#f87171';
-        } else {
-            bar.classList.add('hidden');
-            btn.textContent = '☑️ 選択';
-            btn.style.color = '';
-            btn.style.borderColor = '';
-        }
-        updateSelectCount();
-        renderHistory();
-    };
-
-    function updateSelectCount() {
-        var el = document.getElementById('selectCount');
-        if (el) el.textContent = selectedClinicIds.size + '件選択中';
-    }
-
-    window.toggleClinicCheck = function(id) {
-        if (selectedClinicIds.has(id)) selectedClinicIds.delete(id);
-        else selectedClinicIds.add(id);
-        updateSelectCount();
-        var cb = document.getElementById('cb_' + id);
-        if (cb) cb.checked = selectedClinicIds.has(id);
-    };
-
-    window.createGroupFromSelected = function() {
-        if (selectedClinicIds.size < 1) { showToast('クリニックを選択してください'); return; }
-        var name = prompt('系列グループ名を入力してください\n（例: ○○医療グループ）');
-        if (!name || !name.trim()) return;
-        apiCall('POST', '/api/group/create', { name: name.trim(), createdBy: myName }, function(st, data) {
-            if (st === 200 && data) {
-                addGroupId(data.groupId);
-                var ids = Array.from(selectedClinicIds);
-                var done = 0;
-                for (var i = 0; i < ids.length; i++) {
-                    apiCall('POST', '/api/group/' + data.groupId + '/add-room', { roomId: ids[i] }, function() {
-                        done++;
-                        if (done >= ids.length) {
-                            showToast('✅ グループ「' + name.trim() + '」を' + ids.length + '院で作成しました');
-                            toggleClinicSelect();
-                            renderGroupSection();
-                        }
-                    });
-                }
-            } else { alert('グループ作成に失敗しました'); }
-        });
-    };
 
     function renderGroupSection() {
         var dashSection = document.getElementById('groupDashSection');
@@ -914,7 +830,7 @@
         var groupIds = getGroupIds();
         if (groupIds.length === 0) {
             dashSection.classList.add('hidden');
-            listSection.innerHTML = '<div style="font-size:12px;color:#64748b;line-height:1.6;">系列のクリニック間で在庫を横断的に確認できます。<br>上のクリニック一覧から「☑️ 選択」でグループ化できます。</div>';
+            listSection.innerHTML = '<div style="font-size:12px;color:#64748b;line-height:1.6;">系列のクリニック間で在庫を横断的に確認できます。<br>「✨ グループ作成」からグループを作って、クリニックを追加してください。</div>';
             return;
         }
         dashSection.classList.remove('hidden');
