@@ -580,11 +580,13 @@ module.exports = async (req, res) => {
       if (!group) return res.status(404).json({ error: 'グループが見つかりません' });
       if (typeof group === 'string') group = JSON.parse(group);
 
-      // 重複チェック
-      if (!group.roomIds.includes(roomId)) {
-        group.roomIds.push(roomId);
-        await saveGroup(groupId, group);
+      // 重複排除（配列をSetで整理）
+      var uniqueIds = Array.from(new Set(group.roomIds || []));
+      if (!uniqueIds.includes(roomId)) {
+        uniqueIds.push(roomId);
       }
+      group.roomIds = uniqueIds;
+      await saveGroup(groupId, group);
       // ルーム側にもグループ情報を保持
       let room = await getRoom(roomId);
       if (room) {
@@ -626,6 +628,14 @@ module.exports = async (req, res) => {
       let group = await getGroup(groupId);
       if (!group) return res.status(404).json({ error: 'グループが見つかりません' });
       if (typeof group === 'string') group = JSON.parse(group);
+      // roomIdsの重複排除（既存データ修復）
+      if (group.roomIds) {
+        var unique = Array.from(new Set(group.roomIds));
+        if (unique.length !== group.roomIds.length) {
+          group.roomIds = unique;
+          await saveGroup(groupId, group);
+        }
+      }
       return res.status(200).json(group);
     }
 
