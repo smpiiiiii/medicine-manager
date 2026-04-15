@@ -1233,7 +1233,11 @@
         if (autoReloadTimer) clearInterval(autoReloadTimer);
         roomId = null;
         roomData = null;
+        document.getElementById('headerTitle').textContent = '💊 薬剤在庫マネージャー';
+        document.getElementById('headerSub').textContent = '';
+        document.getElementById('statsBar').classList.add('hidden');
         renderHistory();
+        renderGroupSection();
     });
 
       document.getElementById('createRoomBtn').addEventListener('click', function() {
