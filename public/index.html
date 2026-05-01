@@ -25,6 +25,7 @@
         .stats b { color: #fbbf24; }
         .stat-danger b { color: #f87171; }
         .stat-warn b { color: #fbbf24; }
+        .stat-warn3m b { color: #fb923c; }
         .stat-safe b { color: #34d399; }
 
         /* コンテンツ */
@@ -59,6 +60,7 @@
         .med-card { background: #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 8px; border-left: 4px solid #334155; transition: all .2s; }
         .med-card.status-danger { border-left-color: #ef4444; background: linear-gradient(135deg, #1e293b, #2a1f1f); }
         .med-card.status-warn { border-left-color: #f59e0b; background: linear-gradient(135deg, #1e293b, #2a271f); }
+        .med-card.status-warn3m { border-left-color: #f97316; background: linear-gradient(135deg, #1e293b, #28231c); }
         .med-card.status-safe { border-left-color: #10b981; }
         .med-card.status-out { border-left-color: #6b7280; background: #151c2a; opacity: .7; }
         .med-header { display: flex; align-items: center; gap: 8px; }
@@ -70,6 +72,7 @@
         .med-badge { font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: 700; white-space: nowrap; }
         .badge-danger { background: rgba(239,68,68,.15); color: #f87171; }
         .badge-warn { background: rgba(245,158,11,.15); color: #fbbf24; }
+        .badge-warn3m { background: rgba(249,115,22,.15); color: #fb923c; }
         .badge-safe { background: rgba(16,185,129,.15); color: #34d399; }
         .badge-out { background: rgba(107,114,128,.15); color: #9ca3af; }
         .med-qty { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
@@ -195,6 +198,7 @@
     <div class="stats hidden" id="statsBar">
         <div class="s stat-danger">🔴 期限切れ <b id="expiredCount">0</b></div>
         <div class="s stat-warn">🟡 1ヶ月以内 <b id="warningCount">0</b></div>
+        <div class="s stat-warn3m">🟠 3ヶ月以内 <b id="warn3mCount">0</b></div>
         <div class="s stat-safe">🟢 安全 <b id="safeCount">0</b></div>
     </div>
 </div>
@@ -261,6 +265,7 @@
             <div class="filter-tab active" data-st="all">すべて</div>
             <div class="filter-tab" data-st="danger">🔴 期限切れ</div>
             <div class="filter-tab" data-st="warn">🟡 1ヶ月以内</div>
+            <div class="filter-tab" data-st="warn3m">🟠 3ヶ月以内</div>
             <div class="filter-tab" data-st="out">⬛ 在庫切れ</div>
         </div>
         <!-- ソート -->
@@ -314,6 +319,7 @@
             <div class="filter-tab active" data-filter="all">すべて</div>
             <div class="filter-tab" data-filter="danger">🔴 期限切れ</div>
             <div class="filter-tab" data-filter="warn">🟡 1ヶ月以内</div>
+            <div class="filter-tab" data-filter="warn3m">🟠 3ヶ月以内</div>
             <div class="filter-tab" data-filter="safe">🟢 安全</div>
             <div class="filter-tab" data-filter="out">⬛ 在庫切れ</div>
         </div>
@@ -668,6 +674,7 @@
         if (diff < 0) return { status: 'danger', label: Math.abs(diff) + '日超過', days: diff };
         if (diff === 0) return { status: 'danger', label: '今日まで', days: 0 };
         if (diff <= 30) return { status: 'warn', label: 'あと' + diff + '日', days: diff };
+        if (diff <= 90) return { status: 'warn3m', label: 'あと' + diff + '日', days: diff };
         return { status: 'safe', label: diff + '日後', days: diff };
     }
 
@@ -1185,7 +1192,7 @@
 
         // サマリー
         var totalMeds = dashData.medicines.length;
-        var dangerCount = 0; var warnCount = 0; var outCount = 0;
+        var dangerCount = 0; var warnCount = 0; var warn3mCount = 0; var outCount = 0;
         for (var si = 0; si < dashData.medicines.length; si++) {
             for (var sj = 0; sj < dashData.medicines[si].clinics.length; sj++) {
                 var sc = dashData.medicines[si].clinics[sj];
@@ -1193,12 +1200,14 @@
                 if (sc.quantity === 0) outCount++;
                 else if (ss.status === 'danger') dangerCount++;
                 else if (ss.status === 'warn') warnCount++;
+                else if (ss.status === 'warn3m') warn3mCount++;
             }
         }
         summary.innerHTML =
             '<div class="dash-summary-item" style="color:#f1f5f9;">💊 薬剤 <b>' + totalMeds + '</b>種</div>' +
             '<div class="dash-summary-item" style="color:#f87171;">🔴 期限切れ <b>' + dangerCount + '</b></div>' +
             '<div class="dash-summary-item" style="color:#fbbf24;">🟡 1ヶ月内 <b>' + warnCount + '</b></div>' +
+            '<div class="dash-summary-item" style="color:#fb923c;">🟠 3ヶ月内 <b>' + warn3mCount + '</b></div>' +
             '<div class="dash-summary-item" style="color:#9ca3af;">⬛ 在庫切れ <b>' + outCount + '</b></div>';
 
         if (meds.length === 0) {
@@ -1225,8 +1234,8 @@
                 (function(cl) {
                     var es = getExpiryStatus(cl.expiryDate);
                     var isOut = cl.quantity === 0;
-                    var statusColor = isOut ? '#9ca3af' : (es.status === 'danger' ? '#f87171' : (es.status === 'warn' ? '#fbbf24' : '#34d399'));
-                    var statusIcon = isOut ? '⬛' : (es.status === 'danger' ? '🔴' : (es.status === 'warn' ? '🟡' : '🟢'));
+                    var statusColor = isOut ? '#9ca3af' : (es.status === 'danger' ? '#f87171' : (es.status === 'warn' ? '#fbbf24' : (es.status === 'warn3m' ? '#fb923c' : '#34d399')));
+                    var statusIcon = isOut ? '⬛' : (es.status === 'danger' ? '🔴' : (es.status === 'warn' ? '🟡' : (es.status === 'warn3m' ? '🟠' : '🟢')));
                     var row = document.createElement('div');
                     row.className = 'dash-clinic-row';
                     row.innerHTML =
@@ -1528,7 +1537,7 @@
         }
 
         // ステータス計算
-        var expired = 0, warning = 0, safe = 0, outOfStock = 0;
+        var expired = 0, warning = 0, warn3m = 0, safe = 0, outOfStock = 0;
         var alertMeds = [];
 
         // ソート
@@ -1567,12 +1576,14 @@
             if (isOut) outOfStock++;
             else if (es.status === 'danger') { expired++; alertMeds.push(m); }
             else if (es.status === 'warn') { warning++; alertMeds.push(m); }
+            else if (es.status === 'warn3m') { warn3m++; alertMeds.push(m); }
             else safe++;
 
             // フィルタ
             var show = true;
             if (currentFilter === 'danger' && es.status !== 'danger') show = false;
             if (currentFilter === 'warn' && es.status !== 'warn') show = false;
+            if (currentFilter === 'warn3m' && es.status !== 'warn3m') show = false;
             if (currentFilter === 'safe' && es.status !== 'safe') show = false;
             if (currentFilter === 'out' && !isOut) show = false;
             // カテゴリフィルター
@@ -1595,6 +1606,7 @@
         // 統計
         document.getElementById('expiredCount').textContent = expired;
         document.getElementById('warningCount').textContent = warning;
+        document.getElementById('warn3mCount').textContent = warn3m;
         document.getElementById('safeCount').textContent = safe;
         statsBar.classList.remove('hidden');
 
@@ -1635,7 +1647,7 @@
 
             var icon = document.createElement('div');
             icon.className = 'med-icon';
-            icon.textContent = isOutOfStock ? '📦' : (status.status === 'danger' ? '🔴' : (status.status === 'warn' ? '🟡' : '🟢'));
+            icon.textContent = isOutOfStock ? '📦' : (status.status === 'danger' ? '🔴' : (status.status === 'warn' ? '🟡' : (status.status === 'warn3m' ? '🟠' : '🟢')));
 
             var info = document.createElement('div');
             info.className = 'med-info';
