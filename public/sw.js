@@ -1,8 +1,8 @@
 // 薬剤在庫マネージャー — Service Worker
 // プッシュ通知の受信とキャッシュ管理
 
-const CACHE_NAME = 'med-v24';
-const ASSETS = ['/', '/manifest.json'];
+const CACHE_NAME = 'med-v25';
+const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png'];
 
 // インストール
 self.addEventListener('install', e => {
@@ -10,7 +10,7 @@ self.addEventListener('install', e => {
   self.skipWaiting();
 });
 
-// アクティベート
+// アクティベート — 古いキャッシュを削除
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -20,11 +20,34 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// フェッチ（ネットワークファースト）
+// フェッチ（ネットワークファースト + キャッシュ更新）
 self.addEventListener('fetch', e => {
+  // API呼び出しはキャッシュしない
   if (e.request.url.includes('/api/')) return;
+
+  // GETリクエストのみキャッシュ対象
+  if (e.request.method !== 'GET') return;
+
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    fetch(e.request)
+      .then(response => {
+        // 成功したレスポンスをキャッシュに保存
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        }
+        return response;
+      })
+      .catch(() => {
+        // オフライン時はキャッシュから返す
+        return caches.match(e.request).then(cached => {
+          // ナビゲーションリクエスト（ページ遷移）でキャッシュがなければ / を返す
+          if (!cached && e.request.mode === 'navigate') {
+            return caches.match('/');
+          }
+          return cached;
+        });
+      })
   );
 });
 
